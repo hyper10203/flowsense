@@ -13,7 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@flowsense/shared": "workspace:*",
+    "@flowsense/shared": "file:../../packages/shared",
     "@tanstack/react-query": "^5.59.0",
     "active-win": "^9.1.0",
     "clsx": "^2.1.1",
