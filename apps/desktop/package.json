@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "FlowSense — AI-powered desktop focus companion",
-  "main": "dist-electron/main.js",
+  "main": "out/main/main.js",
   "type": "module",
   "scripts": {
     "dev": "electron-vite dev",
@@ -46,7 +46,7 @@
     },
     "files": [
       "dist/**/*",
-      "dist-electron/**/*"
+      "out/**/*"
     ],
     "win": {
       "target": "nsis"

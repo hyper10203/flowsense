@@ -30,7 +30,7 @@ function resolveRendererPath(): string {
 }
 
 function resolvePreloadPath(): string {
-  return path.join(__dirname, "preload.js");
+  return path.join(__dirname, "preload.mjs");
 }
 
 function createMainWindow(): void {

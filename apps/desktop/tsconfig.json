@@ -25,6 +25,6 @@
       "@shared/*": ["../packages/shared/src/*"]
     }
   },
-  "include": ["src", "electron", "vite.config.ts"],
+  "include": ["src", "electron", "electron.vite.config.ts"],
   "exclude": ["node_modules", "dist", "dist-electron"]
 }
