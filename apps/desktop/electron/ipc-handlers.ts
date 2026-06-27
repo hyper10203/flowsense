@@ -15,7 +15,6 @@ export interface IpcDependencies {
   settingsStore: {
     get: (key: string) => unknown;
     set: (key: string, value: unknown) => void;
-    all: () => Record<string, unknown>;
     store: () => unknown;
   };
   mainWindow: BrowserWindow;
@@ -56,7 +55,7 @@ export function registerIpcHandlers(deps: IpcDependencies): void {
       const stored = settingsStore.get(key);
       return stored ?? DEFAULT_SETTINGS[key as keyof typeof DEFAULT_SETTINGS];
     }
-    return settingsStore.all();
+    return settingsStore.store();
   });
 
   ipcMain.handle(IPC.SETTINGS_SET, (_e, key: string, value: unknown) => {

@@ -9,7 +9,7 @@ router = APIRouter(prefix="/suggestions", tags=["suggestions"])
 
 @router.get("")
 def list_suggestions(db: Session = Depends(get_db)):
-    items = suggestion_service.list_pending_suggestions(db)
+    items = suggestion_service.list_all_suggestions(db)
     return [
         {
             "id": s.id,

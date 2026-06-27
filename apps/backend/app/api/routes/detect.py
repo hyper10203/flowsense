@@ -19,7 +19,7 @@ def run_detection(db: Session = Depends(get_db)):
             "application": e.application,
             "window_title": e.window_title,
             "url": e.url,
-            "timestamp": e.timestamp,
+            "timestamp": e.timestamp.isoformat() if hasattr(e.timestamp, "isoformat") else str(e.timestamp),
         }
         for e in events
     ]

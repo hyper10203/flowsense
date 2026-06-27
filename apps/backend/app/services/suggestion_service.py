@@ -30,10 +30,9 @@ def create_suggestion_for_workflow(db: Session, workflow: Workflow) -> Suggestio
     return suggestion
 
 
-def list_pending_suggestions(db: Session) -> Sequence[Suggestion]:
+def list_all_suggestions(db: Session) -> Sequence[Suggestion]:
     query = (
         select(Suggestion)
-        .where(Suggestion.status == "pending")
         .order_by(Suggestion.shown_at.desc())
     )
     return db.execute(query).scalars().all()
@@ -48,3 +47,17 @@ def set_suggestion_status(db: Session, suggestion_id: int, status: str) -> Sugge
     db.flush()
     db.refresh(suggestion)
     return suggestion
+
+
+def dismiss_for_workflow(db: Session, workflow_id: int) -> None:
+    suggestions = db.execute(
+        select(Suggestion).where(
+            Suggestion.workflow_id == workflow_id,
+            Suggestion.status == "pending",
+        )
+    ).scalars().all()
+    now = datetime.now(UTC)
+    for s in suggestions:
+        s.status = "dismissed"
+        s.action_at = now
+    db.flush()

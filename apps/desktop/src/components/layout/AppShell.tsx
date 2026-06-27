@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Sidebar } from "./Sidebar.jsx";
 import { Topbar } from "./Topbar.jsx";
 import { useApp } from "../../store.jsx";
-import { useKeyboardShortcuts } from "../../hooks/use-monitoring.js";
+import { useKeyboardShortcuts } from "../../hooks/use-keyboard.js";
 
 interface AppShellProps {
   children: ReactNode;
@@ -16,7 +16,6 @@ export function AppShell({ children }: AppShellProps): JSX.Element {
   const onSettings = useCallback(() => setRoute("settings"), [setRoute]);
   const onRefresh = useCallback(() => {
     refreshBackendStatus();
-    window.location.reload();
   }, [refreshBackendStatus]);
 
   const shortcuts = useMemo(

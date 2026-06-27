@@ -73,6 +73,6 @@ def dismiss_workflow(workflow_id: int, db: Session = Depends(get_db)):
     if wf is None:
         raise HTTPException(status_code=404, detail="Workflow not found")
     from app.services import suggestion_service
-    suggestion_service.set_suggestion_status(db, workflow_id, "dismissed")
+    suggestion_service.dismiss_for_workflow(db, workflow_id)
     db.commit()
     return {"success": True}

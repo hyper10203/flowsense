@@ -1,33 +1,4 @@
-import { useEffect, useState } from "react";
-import { ipc } from "../lib/ipc.js";
-
-export function useMonitoringState(): {
-  active: boolean;
-  setActive: (v: boolean) => Promise<void>;
-} {
-  const [active, setActive] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    ipc()
-      .monitoring.status()
-      .then((s) => {
-        if (!cancelled) setActive(Boolean(s?.active));
-      })
-      .catch(() => void 0);
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const setActiveValue = async (v: boolean): Promise<void> => {
-    if (v) await ipc().monitoring.start();
-    else await ipc().monitoring.stop();
-    setActive(v);
-  };
-
-  return { active, setActive: setActiveValue };
-}
+import { useEffect } from "react";
 
 export function useKeyboardShortcuts(handlers: {
   onSearch: () => void;

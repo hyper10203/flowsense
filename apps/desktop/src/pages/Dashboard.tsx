@@ -31,9 +31,10 @@ export function DashboardPage(): JSX.Element {
     refetch: refetchAnalytics,
   } = useAnalyticsSummary();
 
+  const mockActivity = useMemo(() => buildMockActivity(50), []);
   const activity = useMemo(
-    () => activityData ?? buildMockActivity(50),
-    [activityData]
+    () => activityData ?? mockActivity,
+    [activityData, mockActivity]
   );
   const activityItems = activity.items;
   const analytics = useMemo(
@@ -46,7 +47,7 @@ export function DashboardPage(): JSX.Element {
     return activityItems
       .filter((e) => e.timestamp.startsWith(today))
       .reduce((acc, e) => acc + e.duration_ms, 0);
-  }, [activity]);
+  }, [activityItems]);
 
   const mostUsed = analytics.most_used_apps[0];
 
@@ -143,7 +144,7 @@ export function DashboardPage(): JSX.Element {
         </div>
       </div>
 
-      <div>
+      <div className="max-h-96">
         <ActivityFeed
           events={activityItems}
           loading={activityLoading}

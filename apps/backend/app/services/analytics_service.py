@@ -53,6 +53,7 @@ def timeline(db: Session, *, start: datetime, end: datetime) -> Sequence[Activit
 def daily_trend(db: Session, days: int = 7) -> list[dict]:
     end = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
     start = end - timedelta(days=days)
+    interval = settings_default_interval_minutes()
     query = (
         select(
             func.date(Activity.timestamp).label("day"),
@@ -63,7 +64,14 @@ def daily_trend(db: Session, days: int = 7) -> list[dict]:
         .order_by("day")
     )
     rows = db.execute(query).all()
-    return [{"date": str(r.day), "count": r.cnt} for r in rows]
+    return [
+        {
+            "date": str(r.day),
+            "productive_minutes": round(r.cnt * interval, 1),
+            "idle_minutes": 0,
+        }
+        for r in rows
+    ]
 
 
 def app_breakdown(db: Session, *, start: datetime | None = None, end: datetime | None = None) -> list[dict]:
@@ -73,10 +81,19 @@ def app_breakdown(db: Session, *, start: datetime | None = None, end: datetime |
     if end is not None:
         base = base.where(Activity.timestamp <= end)
     base_sub = base.subquery()
+    interval = settings_default_interval_minutes()
     rows = db.execute(
         select(Activity.application, func.count().label("cnt"))
         .select_from(base_sub)
         .group_by(Activity.application)
         .order_by(func.count().desc())
     ).all()
-    return [{"application": r.application, "count": r.cnt} for r in rows]
+    total_minutes = sum(r.cnt for r in rows) * interval
+    return [
+        {
+            "application": r.application,
+            "minutes": round(r.cnt * interval, 1),
+            "percentage": round((r.cnt * interval / total_minutes) * 100, 1) if total_minutes > 0 else 0,
+        }
+        for r in rows
+    ]

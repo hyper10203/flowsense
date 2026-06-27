@@ -24,6 +24,18 @@ export function SearchBar({
     }
   }, [autoFocus]);
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onChange("");
+        ref.current?.blur();
+      }
+    };
+    const el = ref.current;
+    el?.addEventListener("keydown", onKey);
+    return () => el?.removeEventListener("keydown", onKey);
+  }, [onChange]);
+
   return (
     <div className="relative">
       <Search

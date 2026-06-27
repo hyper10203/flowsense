@@ -43,25 +43,3 @@ export function Skeleton({
   );
 }
 
-export function SkeletonText({
-  className,
-}: {
-  className?: string;
-}): JSX.Element {
-  return <Skeleton lines={3} className={className} />;
-}
-
-export function SkeletonCircle({
-  className,
-  size = 40,
-}: {
-  className?: string;
-  size?: number;
-}): JSX.Element {
-  return (
-    <Skeleton
-      className={cn("rounded-full", className)}
-      style={{ width: size, height: size }}
-    />
-  );
-}

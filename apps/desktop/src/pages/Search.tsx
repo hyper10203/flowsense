@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search as SearchIcon } from "lucide-react";
 import { useActivityList } from "../hooks/use-api.js";
 import { Card } from "../components/ui/Card.jsx";
@@ -22,20 +22,28 @@ function fuzzy(haystack: string, needle: string): boolean {
 
 export function SearchPage(): JSX.Element {
   const [query, setQuery] = useState("");
+  const [debounced, setDebounced] = useState("");
   const { data, isLoading } = useActivityList({ limit: 200 });
-  const events = useMemo(() => data?.items ?? buildMockActivity(200).items, [data]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(query), 150);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  const mockItems = useMemo(() => buildMockActivity(200).items, []);
+  const events = useMemo(() => data?.items ?? mockItems, [data, mockItems]);
 
   const filtered = useMemo(() => {
-    if (!query.trim()) return events.slice(0, 20);
+    if (!debounced.trim()) return events.slice(0, 20);
     return events
       .filter(
         (e) =>
-          fuzzy(e.application, query) ||
-          fuzzy(e.window_title, query) ||
-          (e.url && fuzzy(e.url, query))
+          fuzzy(e.application, debounced) ||
+          fuzzy(e.window_title, debounced) ||
+          (e.url && fuzzy(e.url, debounced))
       )
       .slice(0, 50);
-  }, [query, events]);
+  }, [debounced, events]);
 
   return (
     <div className="p-6 space-y-4 max-w-4xl mx-auto">
@@ -62,10 +70,10 @@ export function SearchPage(): JSX.Element {
         {!isLoading && filtered.length === 0 && (
           <EmptyState
             icon={<SearchIcon />}
-            title={query ? "No results" : "Start typing"}
+            title={debounced ? "No results" : "Start typing"}
             description={
-              query
-                ? `No activity matches "${query}".`
+              debounced
+                ? `No activity matches "${debounced}".`
                 : "Search across all your tracked activity."
             }
           />
