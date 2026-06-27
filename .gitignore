@@ -21,3 +21,4 @@ electron/dist/
 backend/data/
 .idea/
 .vscode/
+claude/
