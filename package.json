@@ -1,0 +1,28 @@
+{
+  "name": "flowsense",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local-first desktop productivity assistant that discovers repetitive workflows automatically.",
+  "workspaces": [
+    "apps/desktop",
+    "apps/backend",
+    "apps/extension",
+    "packages/shared"
+  ],
+  "scripts": {
+    "dev": "concurrently -n desktop,backend,extension -c blue,green,yellow \"npm:dev:desktop\" \"npm:dev:backend\" \"npm:dev:extension\"",
+    "dev:desktop": "npm -w @flowsense/desktop run dev",
+    "dev:backend": "npm -w @flowsense/backend run dev",
+    "dev:extension": "npm -w @flowsense/extension run dev",
+    "build": "npm -w @flowsense/shared run build && npm -w @flowsense/desktop run build && npm -w @flowsense/backend run build && npm -w @flowsense/extension run build",
+    "test": "npm -w @flowsense/backend run test && npm -w @flowsense/desktop run test",
+    "lint": "npm -w @flowsense/desktop run lint && npm -w @flowsense/backend run lint",
+    "typecheck": "npm -w @flowsense/shared run typecheck && npm -w @flowsense/desktop run typecheck"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
