@@ -12,7 +12,7 @@ export function TimelineGroup({
   date,
   events,
   compact = false,
-}: TimelineGroupProps): JSX.Element {
+}: TimelineGroupProps): JSX.Element | null {
   if (events.length === 0) return null;
   return (
     <div className="space-y-0.5">

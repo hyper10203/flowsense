@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Button } from "../ui/Button.jsx";
 import { cn } from "../../lib/utils.js";
+import { useApp } from "../../store.jsx";
 
 interface TopbarProps {
   onSearchClick: () => void;

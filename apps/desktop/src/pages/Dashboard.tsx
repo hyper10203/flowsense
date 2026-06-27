@@ -35,6 +35,7 @@ export function DashboardPage(): JSX.Element {
     () => activityData ?? buildMockActivity(50),
     [activityData]
   );
+  const activityItems = activity.items;
   const analytics = useMemo(
     () => analyticsData ?? buildMockAnalytics(),
     [analyticsData]
@@ -42,7 +43,7 @@ export function DashboardPage(): JSX.Element {
 
   const todayMinutes = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
-    return activity.items
+    return activityItems
       .filter((e) => e.timestamp.startsWith(today))
       .reduce((acc, e) => acc + e.duration_ms, 0);
   }, [activity]);
@@ -108,7 +109,7 @@ export function DashboardPage(): JSX.Element {
               label="Most used"
               value={mostUsed?.application ?? "—"}
               hint={
-                mostUsed ? formatMinutes(minutes) : "No data yet"
+                mostUsed ? formatMinutes(mostUsed.minutes) : "No data yet"
               }
               icon={<TrendingUp size={20} />}
               delay={0.05}
@@ -144,7 +145,7 @@ export function DashboardPage(): JSX.Element {
 
       <div>
         <ActivityFeed
-          events={activity.items}
+          events={activityItems}
           loading={activityLoading}
           title="Recent activity"
           limit={10}

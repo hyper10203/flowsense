@@ -64,25 +64,22 @@ export const api = {
   },
   workflows: {
     list: () => request<Workflow[]>("/workflows"),
-    dismiss: (id: number) =>
-      request<{ ok: boolean }>(`/workflows/${id}/dismiss`, { method: "POST" }),
-    accept: (id: number) =>
-      request<{ ok: boolean }>(`/workflows/${id}/accept`, { method: "POST" }),
+    dismiss: async (id: number) => { await request<void>(`/workflows/${id}/dismiss`, { method: "POST" }); },
+    accept: async (id: number) => { await request<void>(`/workflows/${id}/accept`, { method: "POST" }); },
   },
   suggestions: {
     list: () => request<Suggestion[]>("/suggestions"),
-    accept: (id: number) =>
-      request<{ ok: boolean }>(`/suggestions/${id}/accept`, { method: "POST" }),
-    dismiss: (id: number) =>
-      request<{ ok: boolean }>(`/suggestions/${id}/dismiss`, { method: "POST" }),
+    accept: async (id: number) => { await request<void>(`/suggestions/${id}/accept`, { method: "POST" }); },
+    dismiss: async (id: number) => { await request<void>(`/suggestions/${id}/dismiss`, { method: "POST" }); },
   },
   settings: {
     get: () => request<Settings>("/settings"),
-    update: (key: keyof Settings, value: Settings[keyof Settings]) =>
-      request<Settings>("/settings", {
+    update: async (key: keyof Settings, value: Settings[keyof Settings]) => {
+      await request<void>("/settings", {
         method: "PATCH",
         body: JSON.stringify({ key, value }),
-      }),
+      });
+    },
   },
 };
 

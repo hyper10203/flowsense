@@ -78,7 +78,6 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
 
   useEffect(() => {
     const handler = (
-      _e: unknown,
       payload: { key: string; value: unknown }
     ): void => {
       if (payload.key === "all") {

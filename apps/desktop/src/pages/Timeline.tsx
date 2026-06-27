@@ -50,7 +50,7 @@ export function TimelinePage(): JSX.Element {
     limit: pageSize * page,
   });
 
-  const events = useMemo(() => data ?? buildMockActivity(100), [data]);
+  const events = useMemo(() => data?.items ?? buildMockActivity(100).items, [data]);
   const apps = useMemo(
     () => Array.from(new Set(events.map((e) => e.application))).sort(),
     [events]

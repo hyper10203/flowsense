@@ -19,7 +19,7 @@ export function SuggestionCard({
   onAccept,
   onDismiss,
   delay = 0,
-}: SuggestionCardProps): JSX.Element {
+}: SuggestionCardProps): JSX.Element | null {
   const [status, setStatus] = useState<"pending" | "accepted" | "dismissed">(
     suggestion.status === "accepted"
       ? "accepted"

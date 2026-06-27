@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, session } from "electron";
+import { app, BrowserWindow, ipcMain, powerMonitor } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import ElectronStore from "electron-store";
@@ -13,6 +13,7 @@ const __dirname = path.dirname(__filename);
 const isDev = !app.isPackaged && process.env.NODE_ENV !== "production";
 
 let mainWindow: BrowserWindow | null = null;
+let isQuitting = false;
 const monitor = new ActivityMonitor();
 const notifications = new NotificationManager();
 const store = new ElectronStore({ clearInvalidConfig: true });
@@ -56,7 +57,7 @@ function createMainWindow(): void {
   });
 
   mainWindow.on("close", (e) => {
-    if (!app.isQuitting) {
+    if (!isQuitting) {
       e.preventDefault();
       mainWindow?.hide();
     }
@@ -102,12 +103,11 @@ function toggleMonitoring(): void {
 }
 
 function setupLifecycle(): void {
-  const ses = session.defaultSession;
-  ses.on("lock-screen", () => {
+  powerMonitor.on("suspend", () => {
     monitor.pause();
     mainWindow?.webContents.send("system:locked");
   });
-  ses.on("unlock-screen", () => {
+  powerMonitor.on("resume", () => {
     monitor.resume();
     mainWindow?.webContents.send("system:unlocked");
   });
@@ -160,7 +160,7 @@ app.on("window-all-closed", () => {
 });
 
 app.on("before-quit", () => {
-  app.isQuitting = true;
+  isQuitting = true;
   monitor.stop();
   tray.destroy();
 });

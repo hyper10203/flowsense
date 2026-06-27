@@ -23,7 +23,7 @@ function fuzzy(haystack: string, needle: string): boolean {
 export function SearchPage(): JSX.Element {
   const [query, setQuery] = useState("");
   const { data, isLoading } = useActivityList({ limit: 200 });
-  const events = useMemo(() => data ?? buildMockActivity(200), [data]);
+  const events = useMemo(() => data?.items ?? buildMockActivity(200).items, [data]);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return events.slice(0, 20);

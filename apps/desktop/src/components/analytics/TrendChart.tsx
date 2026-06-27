@@ -83,11 +83,11 @@ export function TrendChart({ data, loading }: TrendChartProps): JSX.Element {
                   fontSize: 12,
                   color: "#e8e8f0",
                 }}
-                formatter={(v: number, name: string) => [
+                formatter={(v: unknown, name: unknown) => [
                   `${v} min`,
                   name === "productive_minutes" ? "Productive" : "Idle",
                 ]}
-                labelFormatter={(l: string) => l}
+                labelFormatter={(l: unknown) => String(l)}
               />
               <Area
                 type="monotone"

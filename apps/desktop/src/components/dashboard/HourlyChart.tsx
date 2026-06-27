@@ -63,7 +63,7 @@ export function HourlyChart({ data, loading }: HourlyChartProps): JSX.Element {
                   color: "#e8e8f0",
                 }}
                 cursor={{ fill: "rgba(124,92,255,0.06)" }}
-                formatter={(v: number) => [`${v} min`, "Active"]}
+                formatter={(v: unknown) => [`${v} min`, "Active"]}
               />
               <Bar
                 dataKey="minutes"

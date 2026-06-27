@@ -52,9 +52,9 @@ export function AppUsageChart({ data, loading }: AppUsageChartProps): JSX.Elemen
                     fontSize: 12,
                     color: "#e8e8f0",
                   }}
-                  formatter={(v: number, name: string) => [
-                    `${formatMinutes(v)}`,
-                    name as string,
+                  formatter={(v: unknown, name: unknown) => [
+                    formatMinutes(Number(v)),
+                    String(name),
                   ]}
                 />
               </PieChart>

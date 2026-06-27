@@ -71,10 +71,10 @@ export function SettingsPage(): JSX.Element {
         <ToggleRow
           label="Enable monitoring"
           description="Track active window and app usage."
-          checked={settings.monitoring}
+          checked={settings.browser_tracking}
           onChange={(v) => {
-            localUpdate("monitoring", v);
-            updateSetting.mutate({ key: "monitoring", value: v });
+            localUpdate("browser_tracking", v);
+            updateSetting.mutate({ key: "browser_tracking", value: v });
           }}
         />
         <Slider

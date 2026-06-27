@@ -7,7 +7,7 @@ export default defineConfig({
     build: {
       outDir: "dist-electron",
       rollupOptions: {
-        external: ["active-win", "electron-store"],
+        external: ["electron-store"],
       },
     },
     resolve: {
@@ -20,7 +20,7 @@ export default defineConfig({
     build: {
       outDir: "dist-electron",
       rollupOptions: {
-        external: ["active-win"],
+        external: [],
       },
     },
     resolve: {
