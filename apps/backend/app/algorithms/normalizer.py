@@ -1,7 +1,7 @@
 """Normalize raw activity events into a canonical sequence for pattern detection."""
 
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable
 
 TRACKING_PARAMS = {
     "utm_source",
@@ -52,12 +52,11 @@ def normalize_url(url: str | None) -> str | None:
     if not url:
         return None
     try:
-        from urllib.parse import urlparse, parse_qs, urlunparse
+        from urllib.parse import urlparse, urlunparse
 
         parsed = urlparse(url)
         if not parsed.scheme or not parsed.netloc:
             return None
-        query = {k: v for k, v in parse_qs(parsed.query).items() if k.lower() not in TRACKING_PARAMS}
         cleaned = urlunparse((parsed.scheme, parsed.netloc, parsed.path, parsed.params, "", parsed.fragment))
         return cleaned
     except Exception:

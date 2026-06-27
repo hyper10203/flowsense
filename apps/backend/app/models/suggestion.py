@@ -1,5 +1,6 @@
-from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Index
+from datetime import UTC, datetime
+
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -12,7 +13,7 @@ class Suggestion(Base):
     workflow_id: Mapped[int] = mapped_column(Integer, ForeignKey("workflows.id"), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
     shown_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(UTC)
     )
     action_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 

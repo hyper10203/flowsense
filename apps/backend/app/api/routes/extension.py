@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -20,7 +20,7 @@ class ExtensionActivity(BaseModel):
 @router.post("/activity")
 def ingest_extension_activity(body: ExtensionActivity, db: Session = Depends(get_db)):
     try:
-        ts = body.timestamp or datetime.now(timezone.utc)
+        ts = body.timestamp or datetime.now(UTC)
         activity = activity_service.create_activity(
             db,
             timestamp=ts,

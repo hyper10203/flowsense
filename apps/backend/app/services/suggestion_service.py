@@ -1,7 +1,7 @@
 """Suggestion lifecycle management."""
 
-from datetime import datetime, timezone
-from typing import Sequence
+from collections.abc import Sequence
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -22,7 +22,7 @@ def create_suggestion_for_workflow(db: Session, workflow: Workflow) -> Suggestio
     suggestion = Suggestion(
         workflow_id=workflow.id,
         status="pending",
-        shown_at=datetime.now(timezone.utc),
+        shown_at=datetime.now(UTC),
     )
     db.add(suggestion)
     db.flush()
@@ -44,7 +44,7 @@ def set_suggestion_status(db: Session, suggestion_id: int, status: str) -> Sugge
     if suggestion is None:
         return None
     suggestion.status = status
-    suggestion.action_at = datetime.now(timezone.utc)
+    suggestion.action_at = datetime.now(UTC)
     db.flush()
     db.refresh(suggestion)
     return suggestion

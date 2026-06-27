@@ -1,7 +1,7 @@
 """Workflow persistence and detection orchestration."""
 
-from datetime import datetime, timezone
-from typing import Sequence
+from collections.abc import Sequence
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -38,11 +38,10 @@ def get_workflow_by_hash(db: Session, hash_: str) -> Workflow | None:
 
 def save_detected_workflow(db: Session, detected: DetectedWorkflow) -> Workflow:
     existing = get_workflow_by_hash(db, detected.hash)
-    now = datetime.now(timezone.utc)
     if existing is not None:
         existing.frequency = detected.frequency
         existing.confidence = detected.confidence
-        existing.last_seen = datetime.fromtimestamp(detected.last_seen, tz=timezone.utc)
+        existing.last_seen = datetime.fromtimestamp(detected.last_seen, tz=UTC)
         db.flush()
         db.refresh(existing)
         return existing
@@ -51,8 +50,8 @@ def save_detected_workflow(db: Session, detected: DetectedWorkflow) -> Workflow:
         hash=detected.hash,
         frequency=detected.frequency,
         confidence=detected.confidence,
-        first_seen=datetime.fromtimestamp(detected.first_seen, tz=timezone.utc),
-        last_seen=datetime.fromtimestamp(detected.last_seen, tz=timezone.utc),
+        first_seen=datetime.fromtimestamp(detected.first_seen, tz=UTC),
+        last_seen=datetime.fromtimestamp(detected.last_seen, tz=UTC),
     )
     db.add(workflow)
     db.flush()

@@ -1,7 +1,7 @@
 """Analytics aggregation over activity data."""
 
-from datetime import date, datetime, timedelta, timezone
-from typing import Sequence
+from collections.abc import Sequence
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -51,7 +51,7 @@ def timeline(db: Session, *, start: datetime, end: datetime) -> Sequence[Activit
 
 
 def daily_trend(db: Session, days: int = 7) -> list[dict]:
-    end = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    end = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
     start = end - timedelta(days=days)
     query = (
         select(

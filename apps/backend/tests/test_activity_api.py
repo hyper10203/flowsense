@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi.testclient import TestClient
 
@@ -19,7 +19,7 @@ def test_create_activity(client: TestClient, sample_activity_payload):
 
 def test_create_activity_missing_app(client: TestClient):
     payload = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "window_title": "No app",
     }
     response = client.post("/api/v1/activity", json=payload)

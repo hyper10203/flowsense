@@ -1,5 +1,6 @@
-from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, DateTime, Index
+from datetime import UTC, datetime
+
+from sqlalchemy import DateTime, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -17,7 +18,7 @@ class Activity(Base):
     duration_ms: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     session_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(UTC)
     )
 
     __table_args__ = (

@@ -1,6 +1,7 @@
 """Settings CRUD backed by the key-value Setting table."""
 
 from typing import Any
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 

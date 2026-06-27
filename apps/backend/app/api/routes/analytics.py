@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
@@ -22,9 +22,9 @@ def timeline(
     db: Session = Depends(get_db),
 ):
     if start is None:
-        start = datetime.now(timezone.utc) - timedelta(days=1)
+        start = datetime.now(UTC) - timedelta(days=1)
     if end is None:
-        end = datetime.now(timezone.utc)
+        end = datetime.now(UTC)
     items = analytics_service.timeline(db, start=start, end=end)
     return [
         {

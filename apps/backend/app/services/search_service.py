@@ -1,8 +1,7 @@
 """Full-text search backed by SQLite FTS5 (graceful fallback to LIKE)."""
 
-from typing import Sequence
 
-from sqlalchemy import text, select
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from app.models.activity import Activity
@@ -20,8 +19,8 @@ def _has_fts(db: Session) -> bool:
 def build_fts(db: Session) -> None:
     db.execute(
         text(
-            "CREATE VIRTUAL TABLE IF NOT EXISTS activities_fts USING fts5(""
-                "application, window_title, url, content='activities', content_rowid='id'"
+            "CREATE VIRTUAL TABLE IF NOT EXISTS activities_fts USING fts5("
+            "application, window_title, url, content='activities', content_rowid='id'"
             ")"
         )
     )
@@ -37,7 +36,7 @@ def search(db: Session, query: str, *, limit: int = 20) -> dict:
     q = (query or "").strip()
     if not q:
         return {"activities": [], "workflows": []}
-    if _has_fts):
+    if _has_fts(db):
         rows = db.execute(
             text(
                 "SELECT rowid FROM activities_fts WHERE activities_fts MATCH :q LIMIT :limit"

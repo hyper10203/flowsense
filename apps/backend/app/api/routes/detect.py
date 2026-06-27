@@ -1,6 +1,5 @@
 """Trigger workflow detection over stored activity and persist results."""
 
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session

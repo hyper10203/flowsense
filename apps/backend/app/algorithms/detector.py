@@ -2,7 +2,7 @@
 
 import hashlib
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from app.algorithms.normalizer import NormalizedEvent
 

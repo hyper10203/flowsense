@@ -1,9 +1,9 @@
 """Activity ingestion, retrieval, and deletion."""
 
-from datetime import datetime, timezone
-from typing import Sequence
+from collections.abc import Sequence
+from datetime import UTC, datetime
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.activity import Activity
@@ -28,7 +28,7 @@ def create_activity(
         event_type=event_type,
         duration_ms=duration_ms,
         session_id=session_id,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     db.add(activity)
     db.flush()

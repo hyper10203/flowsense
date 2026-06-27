@@ -2,23 +2,29 @@
 
 import os
 import sys
-from datetime import datetime, timezone
+import tempfile
+from datetime import UTC, datetime
+from pathlib import Path
 
 import pytest
-from fastapi.testclient import TestClient
+
+# Set test env vars BEFORE importing app
+_tmp = Path(tempfile.mkdtemp())
+os.environ["DATABASE_URL"] = f"sqlite:///{_tmp / 'test.db'}"
+os.environ["DATA_DIR"] = str(_tmp)
+os.environ["GEMINI_API_KEY"] = ""
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from app.core.database import SessionLocal, engine, Base  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
+
+from app.core.database import Base, SessionLocal, engine  # noqa: E402
 from app.main import app  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
-def _setup_db(tmp_path, monkeypatch):
-    """Use a fresh in-memory SQLite database for each test."""
-    db_path = tmp_path / "test.db"
-    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_path}")
-    monkeypatch.setenv("DATA_DIR", str(tmp_path))
+def _setup_db():
+    """Create all tables before each test and drop them after."""
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
@@ -41,7 +47,7 @@ def db():
 @pytest.fixture
 def sample_activity_payload():
     return {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "application": "Chrome",
         "window_title": "ChatGPT",
         "url": "https://chat.openai.com/",

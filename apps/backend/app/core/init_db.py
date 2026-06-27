@@ -3,8 +3,15 @@
 from pathlib import Path
 
 from app.core.config import settings
-from app.core.database import engine, Base
-from app.models import Activity, Workflow, WorkflowStep, Suggestion, Setting, DailyStat  # noqa: F401
+from app.core.database import Base, engine
+from app.models import (  # noqa: F401
+    Activity,
+    DailyStat,
+    Setting,
+    Suggestion,
+    Workflow,
+    WorkflowStep,
+)
 
 
 def init_db() -> None:
