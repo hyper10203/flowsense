@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FlowSense</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <h1>FlowSense</h1>
+        <p class="subtitle">Browser activity companion</p>
+      </header>
+
+      <main>
+        <div class="status" id="status">
+          <span class="dot dot-off" id="status-dot"></span>
+          <span id="status-text">Checking…</span>
+        </div>
+
+        <button id="toggle" class="toggle-btn" type="button">Start tracking</button>
+
+        <section class="info">
+          <h2>What we capture</h2>
+          <ul class="capture-list">
+            <li>Active tab URL</li>
+            <li>Page title</li>
+            <li>Domain name</li>
+            <li>Timestamp</li>
+          </ul>
+
+          <h2>What we never capture</h2>
+          <ul class="no-capture-list">
+            <li>Passwords</li>
+            <li>Form contents</li>
+            <li>Cookies</li>
+            <li>Page DOM</li>
+          </ul>
+        </section>
+      </main>
+
+      <footer>
+        <span>v0.1.0</span>
+        <span>Local-only</span>
+      </footer>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>

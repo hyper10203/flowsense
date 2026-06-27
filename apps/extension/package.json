@@ -1,0 +1,14 @@
+{
+  "name": "@flowsense/extension",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/build.mjs --watch",
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "archiver": "^7.0.0"
+  }
+}
