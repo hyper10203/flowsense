@@ -21,35 +21,55 @@ function resolveOverlayPath(): string {
   return path.join(__dirname, "..", "dist", "overlay.html");
 }
 
-export function createOverlayWindow(): BrowserWindow {
-  if (overlay) return overlay;
-
+function positionOverlay(): void {
+  if (!overlay || overlay.isDestroyed()) return;
   const { width } = screen.getPrimaryDisplay().workAreaSize;
+  overlay.setBounds({
+    width: 340,
+    height: 52,
+    x: Math.floor((width - 340) / 2),
+    y: 16,
+  });
+}
+
+export function createOverlayWindow(): BrowserWindow {
+  if (overlay && !overlay.isDestroyed()) return overlay;
 
   overlay = new BrowserWindow({
-    width: 320,
-    height: 56,
-    x: Math.floor((width - 320) / 2),
-    y: 12,
+    width: 340,
+    height: 52,
     frame: false,
     transparent: true,
+    backgroundColor: "#00000000",
     alwaysOnTop: true,
     skipTaskbar: true,
     resizable: false,
     movable: false,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
     focusable: false,
     hasShadow: false,
+    thickFrame: false,
     webPreferences: {
       contextIsolation: false,
       nodeIntegration: false,
       sandbox: false,
+      backgroundThrottling: false,
     },
     show: false,
   });
 
+  // Stay on top even over fullscreen apps
+  overlay.setAlwaysOnTop(true, "floating", 1);
+  overlay.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+
   overlay.on("closed", () => {
     overlay = null;
   });
+
+  // Reposition if display changes
+  screen.on("display-metrics-changed", positionOverlay);
 
   const url = resolveOverlayPath();
   if (url.startsWith("http")) {
@@ -63,13 +83,13 @@ export function createOverlayWindow(): BrowserWindow {
 
 export function showOverlay(state: OverlayState): void {
   const w = createOverlayWindow();
+  positionOverlay();
   if (w.webContents.isLoading()) {
     w.webContents.once("did-fail-load", () => sendState(state));
     w.webContents.once("did-finish-load", () => sendState(state));
   } else {
     sendState(state);
   }
-  // showInactive steals no focus — critical so the user's current app stays active
   w.showInactive();
 }
 

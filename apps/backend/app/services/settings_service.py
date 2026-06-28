@@ -16,6 +16,11 @@ DEFAULTS: dict[str, Any] = {
     "startup_launch": False,
     "browser_tracking": True,
     "ai_suggestions": True,
+    "ai_provider": "gemini",
+    "ai_api_key": "",
+    "ai_model": "gemini-2.0-flash",
+    "terminal_tracking": True,
+    "browser_url_tracking": True,
 }
 
 

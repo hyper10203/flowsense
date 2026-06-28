@@ -20,6 +20,11 @@ class SettingUpdate(BaseModel):
     value: Any
 
 
+@router.patch("")
+def patch_setting(body: SettingUpdate, db: Session = Depends(get_db)):
+    return update_setting(body, db)
+
+
 @router.put("")
 def update_setting(body: SettingUpdate, db: Session = Depends(get_db)):
     allowed = {
@@ -31,6 +36,11 @@ def update_setting(body: SettingUpdate, db: Session = Depends(get_db)):
         "startup_launch",
         "browser_tracking",
         "ai_suggestions",
+        "ai_provider",
+        "ai_api_key",
+        "ai_model",
+        "terminal_tracking",
+        "browser_url_tracking",
     }
     if body.key not in allowed:
         raise HTTPException(status_code=400, detail=f"Unknown setting: {body.key}")

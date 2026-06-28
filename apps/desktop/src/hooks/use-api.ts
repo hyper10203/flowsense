@@ -144,6 +144,17 @@ export function useDismissWorkflow() {
   });
 }
 
+export function useRenameWorkflow() {
+  const qc = useQueryClient();
+  return useMutation<{ success: boolean; name: string }, ApiError, { id: number; name: string }>({
+    mutationFn: ({ id, name }) => api.workflows.rename(id, name),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["workflows"] });
+      qc.invalidateQueries({ queryKey: ["suggestions"] });
+    },
+  });
+}
+
 export function useAcceptSuggestion() {
   const qc = useQueryClient();
   return useMutation<void, ApiError, number>({

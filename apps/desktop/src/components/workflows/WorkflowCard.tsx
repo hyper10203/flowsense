@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, Play, Sparkles, X, Check } from "lucide-react";
+import { Check, ChevronDown, Pencil, Play, Sparkles, X } from "lucide-react";
 import type { Workflow } from "@flowsense/shared";
 import { Card, CardContent } from "../ui/Card.jsx";
 import { Button } from "../ui/Button.jsx";
@@ -10,8 +10,9 @@ import { formatDate } from "../../lib/utils.js";
 
 interface WorkflowCardProps {
   workflow: Workflow;
-  onAccept: (id: number) => void;
-  onDismiss: (id: number) => void;
+  onAccept?: (id: number) => void;
+  onDismiss?: (id: number) => void;
+  onRename?: (name: string) => void;
   onStartFlow?: (workflowId: number) => void;
   delay?: number;
 }
@@ -20,13 +21,27 @@ export function WorkflowCard({
   workflow,
   onAccept,
   onDismiss,
+  onRename,
   onStartFlow,
   delay = 0,
 }: WorkflowCardProps): JSX.Element {
   const [expanded, setExpanded] = useState(false);
-  const [status, setStatus] = useState<"pending" | "accepted" | "dismissed">(
-    "pending"
-  );
+  const [status, setStatus] = useState<"pending" | "accepted" | "dismissed">("pending");
+  const [editing, setEditing] = useState(false);
+  const [draftName, setDraftName] = useState("");
+
+  const startEdit = () => {
+    setDraftName(workflow.ai_name ?? "");
+    setEditing(true);
+  };
+
+  const commitEdit = () => {
+    const trimmed = draftName.trim();
+    if (trimmed && trimmed !== workflow.ai_name) {
+      onRename?.(trimmed);
+    }
+    setEditing(false);
+  };
 
   return (
     <motion.div
@@ -42,9 +57,37 @@ export function WorkflowCard({
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-sm font-semibold text-fg truncate">
-                  {workflow.ai_name ?? "Untitled workflow"}
-                </h3>
+                {editing ? (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      commitEdit();
+                    }}
+                    className="flex items-center gap-1"
+                  >
+                    <input
+                      autoFocus
+                      value={draftName}
+                      onChange={(e) => setDraftName(e.target.value)}
+                      onBlur={commitEdit}
+                      className="text-sm font-semibold text-fg bg-bg-subtle border border-accent/30 rounded px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-accent/40 w-48"
+                    />
+                  </form>
+                ) : (
+                  <h3 className="text-sm font-semibold text-fg truncate cursor-pointer hover:text-accent transition-colors" onClick={startEdit} title="Click to rename">
+                    {workflow.ai_name ?? "Untitled workflow"}
+                  </h3>
+                )}
+                {!editing && onRename && (
+                  <button
+                    type="button"
+                    onClick={startEdit}
+                    className="text-fg-subtle hover:text-accent transition-colors"
+                    aria-label="Rename workflow"
+                  >
+                    <Pencil size={11} />
+                  </button>
+                )}
                 <ConfidenceBadge value={workflow.confidence} />
               </div>
               <p className="text-xs text-fg-muted mt-0.5 line-clamp-2">

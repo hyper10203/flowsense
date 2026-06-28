@@ -2,150 +2,135 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>FlowSense Flow Mode</title>
+<title>FlowSense Flow</title>
 <style>
-  :root {
-    --bg: rgba(18, 18, 24, 0.92);
-    --border: rgba(139, 92, 246, 0.2);
-    --fg: #f1f5f9;
-    --muted: #94a3b8;
-    --accent: #8b5cf6;
-    --accent-glow: rgba(139, 92, 246, 0.4);
-    --success: #22c55e;
-    --progress-bg: rgba(148, 163, 184, 0.15);
-    --radius: 14px;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-    background: transparent;
+  /* Reset — no margin, no padding, no scroll, transparent bg */
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
     overflow: hidden;
-    -webkit-app-region: no-drag;
-    height: 56px;
+    background: transparent;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
 
+  /* Center the pill */
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 52px;
+  }
+
+  /* The pill */
   .pill {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 14px;
-    background: var(--bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(139, 92, 246, 0.05);
-    height: 44px;
-    -webkit-app-region: drag;
+    height: 38px;
+    padding: 0 14px;
+    background: rgba(16, 16, 22, 0.93);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    border-radius: 100px;
+    box-shadow:
+      0 4px 24px rgba(0, 0, 0, 0.6),
+      0 0 0 0.5px rgba(255, 255, 255, 0.04) inset;
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
     user-select: none;
-    cursor: default;
-    transition: opacity 0.2s ease;
+    -webkit-app-region: no-drag;
   }
 
   .dot {
-    width: 7px;
-    height: 7px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 8px var(--accent-glow);
+    background: #8b5cf6;
+    box-shadow: 0 0 8px rgba(139, 92, 246, 0.6);
     animation: pulse 1.6s ease-in-out infinite;
     flex-shrink: 0;
   }
-  .dot.complete {
-    background: var(--success);
-    box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
-    animation: none;
-  }
-
+  .dot.complete { background: #22c55e; box-shadow: 0 0 8px rgba(34,197,94,0.5); animation: none; }
   @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(0.85); }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
   }
 
-  .info {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    height: 100%;
-  }
-  .step-count {
-    font-size: 9px;
-    color: var(--muted);
-    letter-spacing: 0.02em;
-    line-height: 1;
-    margin-bottom: 2px;
-  }
+  .info { display: flex; flex-direction: column; justify-content: center; flex: 1; min-width: 0; }
+  .step-count { font-size: 9px; color: #94a3b8; letter-spacing: 0.02em; line-height: 1; margin-bottom: 2px; }
   .app-name {
     font-size: 12px;
     font-weight: 600;
-    color: var(--fg);
+    color: #f1f5f9;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     line-height: 1.2;
+    max-width: 160px;
   }
-  .app-name.complete {
-    color: var(--success);
-  }
+  .app-name.complete { color: #22c55e; }
 
   .btn {
     -webkit-app-region: no-drag;
     display: flex;
     align-items: center;
     gap: 4px;
-    padding: 5px 10px;
-    border-radius: 8px;
+    padding: 5px 12px;
     border: none;
-    background: rgba(139, 92, 246, 0.12);
-    color: var(--accent);
+    border-radius: 100px;
+    background: rgba(139, 92, 246, 0.18);
+    color: #c4b5fd;
     font-size: 11px;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.15s ease;
+    transition: background 0.12s ease;
     flex-shrink: 0;
     line-height: 1;
     font-family: inherit;
   }
-  .btn:hover { background: rgba(139, 92, 246, 0.22); }
-  .btn:active { background: rgba(139, 92, 246, 0.3); }
-  .btn.success {
-    background: rgba(34, 197, 94, 0.12);
-    color: var(--success);
-  }
+  .btn:hover { background: rgba(139, 92, 246, 0.32); }
+  .btn:active { background: rgba(139, 92, 246, 0.45); transform: scale(0.97); }
+  .btn.success { background: rgba(34, 197, 94, 0.18); color: #86efac; }
+  .btn.success:hover { background: rgba(34, 197, 94, 0.3); }
 
   .progress {
     position: absolute;
-    top: 0;
-    left: 0;
+    bottom: 0;
+    left: 14px;
+    right: 14px;
     height: 2px;
-    background: var(--accent);
-    border-radius: 0 1px 1px 0;
+    background: rgba(148, 163, 184, 0.12);
+    border-radius: 1px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: #8b5cf6;
+    border-radius: 1px;
     transition: width 0.3s ease;
-    box-shadow: 0 0 6px var(--accent-glow);
+    box-shadow: 0 0 6px rgba(139, 92, 246, 0.4);
   }
 
   .close {
     -webkit-app-region: no-drag;
     background: none;
     border: none;
-    color: var(--muted);
+    color: #64748b;
     cursor: pointer;
     padding: 2px;
     line-height: 0;
     flex-shrink: 0;
-    transition: color 0.15s ease;
+    transition: color 0.12s ease;
   }
-  .close:hover { color: var(--fg); }
+  .close:hover { color: #cbd5e1; }
 </style>
 </head>
 <body>
-  <div class="pill" id="pill">
-    <div class="progress" id="progress"></div>
+  <div class="pill">
+    <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
     <div class="dot" id="dot"></div>
     <div class="info">
       <div class="step-count" id="stepCount">Step 1/3</div>
@@ -153,37 +138,29 @@
     </div>
     <button class="btn" id="actionBtn">▶ Start</button>
     <button class="close" id="closeBtn" aria-label="Close">
-      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5">
-        <path d="M1 1L9 9M9 1L1 9"/>
+      <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" stroke-width="1.6">
+        <path d="M1 1L8 8M8 1L1 8"/>
       </svg>
     </button>
   </div>
 
   <script>
-    const { ipcRenderer } = require("electron");
+    var { ipcRenderer } = require("electron");
 
-    const pill = document.getElementById("pill");
-    const dot = document.getElementById("dot");
-    const stepCount = document.getElementById("stepCount");
-    const appName = document.getElementById("appName");
-    const actionBtn = document.getElementById("actionBtn");
-    const progress = document.getElementById("progress");
-    const closeBtn = document.getElementById("closeBtn");
+    var state = { currentStep: 0, totalSteps: 1, appName: "", workflowName: "", isComplete: false };
+    var dot = document.getElementById("dot");
+    var stepCount = document.getElementById("stepCount");
+    var appName = document.getElementById("appName");
+    var actionBtn = document.getElementById("actionBtn");
+    var progressFill = document.getElementById("progressFill");
+    var closeBtn = document.getElementById("closeBtn");
 
-    let state = {
-      currentStep: 0,
-      totalSteps: 1,
-      appName: "",
-      workflowName: "",
-      isComplete: false,
-    };
-
-    ipcRenderer.on("overlay:state", (_e, next) => {
-      state = { ...state, ...next };
+    ipcRenderer.on("overlay:state", function (_e, next) {
+      state = Object.assign({}, state, next);
       render();
     });
 
-    actionBtn.addEventListener("click", () => {
+    actionBtn.addEventListener("click", function () {
       if (state.isComplete) {
         ipcRenderer.send("overlay:complete");
       } else {
@@ -191,26 +168,21 @@
       }
     });
 
-    closeBtn.addEventListener("click", () => {
+    closeBtn.addEventListener("click", function () {
       ipcRenderer.send("overlay:close");
     });
 
     function render() {
-      const { currentStep, totalSteps, appName: name, isComplete } = state;
-      stepCount.textContent = isComplete
-        ? "Flow Complete"
-        : `Step ${currentStep + 1}/${totalSteps}`;
-      appName.textContent = isComplete ? "✓ All done" : name;
-      appName.classList.toggle("complete", isComplete);
-      dot.classList.toggle("complete", isComplete);
-
-      const pct = totalSteps > 0 ? Math.min(100, (currentStep / totalSteps) * 100) : 0;
-      progress.style.width = `${Math.min(100, isComplete ? 100 : pct)}%`;
-
-      if (isComplete) {
+      stepCount.textContent = state.isComplete ? "Flow Complete" : "Step " + (state.currentStep + 1) + "/" + state.totalSteps;
+      appName.textContent = state.isComplete ? "✓ All done" : state.appName;
+      appName.classList.toggle("complete", state.isComplete);
+      dot.classList.toggle("complete", state.isComplete);
+      var pct = state.totalSteps > 0 ? Math.min(100, (state.currentStep / state.totalSteps) * 100) : 0;
+      progressFill.style.width = (state.isComplete ? 100 : pct) + "%";
+      if (state.isComplete) {
         actionBtn.textContent = "✓ Done";
         actionBtn.classList.add("success");
-      } else if (currentStep === 0) {
+      } else if (state.currentStep === 0) {
         actionBtn.textContent = "▶ Start";
         actionBtn.classList.remove("success");
       } else {

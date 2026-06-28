@@ -1,11 +1,16 @@
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.services import workflow_service
 
 router = APIRouter(prefix="/workflows", tags=["workflows"])
+
+
+class RenameWorkflowRequest(BaseModel):
+    name: str
 
 
 @router.get("")
@@ -54,6 +59,18 @@ def get_workflow(workflow_id: int, db: Session = Depends(get_db)):
             for s in sorted(wf.steps, key=lambda x: x.step_order)
         ],
     }
+
+
+@router.patch("/{workflow_id}/rename")
+def rename_workflow(workflow_id: int, body: RenameWorkflowRequest, db: Session = Depends(get_db)):
+    wf = workflow_service.get_workflow(db, workflow_id)
+    if wf is None:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+    if not body.name or not body.name.strip():
+        raise HTTPException(status_code=400, detail="Name cannot be empty")
+    wf.ai_name = body.name.strip()[:255]
+    db.commit()
+    return {"success": True, "name": wf.ai_name}
 
 
 @router.post("/{workflow_id}/accept")

@@ -8,6 +8,7 @@ export interface ActiveWindowInfo {
   application: string;
   windowTitle: string;
   url: string | null;
+  commandLine: string | null;
 }
 
 export interface ActivityPayload {
@@ -15,10 +16,27 @@ export interface ActivityPayload {
   application: string;
   window_title: string;
   url: string | null;
-  event_type: "window_focus" | "browser_tab" | "idle_resume" | "idle_start";
+  command_line: string | null;
+  event_type: "window_focus" | "browser_tab" | "terminal" | "idle_resume" | "idle_start";
   duration_ms: number;
   session_id: string | null;
 }
+
+const TERMINAL_APPS = new Set([
+  "windowsterminal",
+  "wt",
+  "cmd",
+  "powershell",
+  "pwsh",
+  "bash",
+  "zsh",
+  "git bash",
+  "alacritty",
+  "wezterm",
+  "tabby",
+  "conemu",
+  "cmder",
+]);
 
 const URL_REGEX = /https?:\/\/[^\s]+/i;
 const BROWSERS = new Set([
@@ -95,12 +113,14 @@ export class ActivityMonitor {
       this.lastWindow = info.windowTitle;
       this.lastApplication = info.application;
       this.lastTimestamp = now;
+      const isTerminal = TERMINAL_APPS.has(info.application.toLowerCase());
       const payload: ActivityPayload = {
         timestamp: new Date().toISOString(),
         application: info.application,
         window_title: info.windowTitle,
         url: info.url,
-        event_type: info.url ? "browser_tab" : "window_focus",
+        command_line: info.commandLine,
+        event_type: isTerminal ? "terminal" : info.url ? "browser_tab" : "window_focus",
         duration_ms: duration,
         session_id: this.sessionId,
       };
@@ -142,8 +162,14 @@ $sb = New-Object System.Text.StringBuilder 512
 $title = $sb.ToString()
 $proc = Get-Process -Id $targetPid -ErrorAction SilentlyContinue
 $name = if ($proc) { $proc.ProcessName } else { "Unknown" }
+$cmdLine = ""
+try {
+  $cim = Get-CimInstance Win32_Process -Filter "ProcessId = $targetPid" -ErrorAction SilentlyContinue
+  if ($cim) { $cmdLine = $cim.CommandLine }
+} catch {}
 Write-Output "APP|$name"
-Write-Output "TITLE|$title"`;
+Write-Output "TITLE|$title"
+Write-Output "CMD|$cmdLine"`;
     const out = execFileSync(ps, ["-NoProfile", "-Command", script], {
       encoding: "utf8",
       timeout: 4000,
@@ -153,7 +179,8 @@ Write-Output "TITLE|$title"`;
       .split(/\r?\n/);
     const app = out.find((l) => l.startsWith("APP|"))?.slice(4) ?? "Unknown";
     const title = out.find((l) => l.startsWith("TITLE|"))?.slice(6) ?? "";
-    return this.buildWindowInfo(app, title);
+    const cmd = out.find((l) => l.startsWith("CMD|"))?.slice(4) ?? "";
+    return this.buildWindowInfo(app, title, cmd);
   }
 
   private getActiveWindowMac(): ActiveWindowInfo | null {
@@ -183,7 +210,7 @@ Write-Output "TITLE|$title"`;
       encoding: "utf8",
       timeout: 4000,
     }).trim();
-    return this.buildWindowInfo(app, title);
+    return this.buildWindowInfo(app, title, null);
   }
 
   private getActiveWindowLinux(): ActiveWindowInfo | null {
@@ -200,12 +227,13 @@ Write-Output "TITLE|$title"`;
       ["-c", "xdotool getactivewindow getwindowname 2>/dev/null || echo"],
       { encoding: "utf8", timeout: 4000 }
     ).trim();
-    return this.buildWindowInfo(out.split("\n")[0] ?? "Unknown", title);
+    return this.buildWindowInfo(out.split("\n")[0] ?? "Unknown", title, null);
   }
 
   private buildWindowInfo(
     rawApp: string,
-    title: string
+    title: string,
+    commandLine: string | null = null
   ): ActiveWindowInfo {
     const application = rawApp.trim() || "Unknown";
     const windowTitle = title.trim() || application;
@@ -215,7 +243,27 @@ Write-Output "TITLE|$title"`;
     if (!url && BROWSERS.has(application.toLowerCase())) {
       url = this.guessBrowserUrl(application, windowTitle);
     }
-    return { application, windowTitle, url };
+    // Extract command from terminal command line if present
+    let cmd: string | null = null;
+    if (TERMINAL_APPS.has(application.toLowerCase()) && commandLine) {
+      cmd = this.extractTerminalCommand(commandLine, application);
+    }
+    return { application, windowTitle, url, commandLine: cmd };
+  }
+
+  private extractTerminalCommand(cmdLine: string, app: string): string | null {
+    if (!cmdLine) return null;
+    // Strip the executable path, keep the arguments
+    const parts = cmdLine.split(/\s+/).filter(Boolean);
+    if (parts.length <= 1) return null;
+    // Remove the exe path (first part)
+    const args = parts.slice(1).join(" ").trim();
+    // For cmd/powershell, extract the actual command being run
+    if (app === "cmd" || app === "powershell" || app === "pwsh") {
+      const match = args.match(/^\/c\s+(.+)$/i) || args.match(/^-Command\s+(.+)$/i);
+      if (match) return match[1].trim();
+    }
+    return args || null;
   }
 
   private guessBrowserUrl(_app: string, title: string): string | null {
@@ -232,6 +280,7 @@ Write-Output "TITLE|$title"`;
       application: "FlowSense",
       windowTitle: "FlowSense",
       url: null,
+      commandLine: null,
     };
   }
 }

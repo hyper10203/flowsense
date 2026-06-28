@@ -83,6 +83,9 @@ const flowSense = {
       workflowName: string;
       isComplete: boolean;
     }) => ipcRenderer.invoke(IPC.OVERLAY_UPDATE, state) as Promise<void>,
+    createDesktopShortcut: () => ipcRenderer.invoke("shortcut:desktop") as Promise<boolean>,
+    pinToTaskbar: () => ipcRenderer.invoke("shortcut:taskbar") as Promise<boolean>,
+    installShortcuts: () => ipcRenderer.invoke("shortcut:install") as Promise<boolean>,
     overlayHide: () => ipcRenderer.invoke(IPC.OVERLAY_HIDE) as Promise<void>,
     onOverlayNext: (cb: Listener<string>) => {
       const handler = (_e: unknown, payload: unknown) => cb(payload as string);

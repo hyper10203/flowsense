@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Download, Trash2 } from "lucide-react";
+import { Download, Eye, EyeOff, Key, Trash2 } from "lucide-react";
 import { useExportData, useSettings, useUpdateSetting } from "../hooks/use-api.js";
 import { useApp } from "../store.jsx";
 import { SettingsSection } from "../components/settings/SettingsSection.jsx";
@@ -9,6 +9,7 @@ import { Slider } from "../components/ui/Slider.jsx";
 import { AccentSelect } from "../components/ui/AccentSelect.jsx";
 import { Button } from "../components/ui/Button.jsx";
 import { Skeleton } from "../components/ui/Skeleton.jsx";
+import { AI_PROVIDERS } from "@flowsense/shared";
 import { ipc } from "../lib/ipc.js";
 
 export function SettingsPage(): JSX.Element {
@@ -102,7 +103,7 @@ export function SettingsPage(): JSX.Element {
 
       <SettingsSection
         title="AI features"
-        description="Configure AI-powered suggestions."
+        description="Configure AI-powered suggestions and naming."
       >
         <ToggleRow
           label="AI suggestions"
@@ -113,15 +114,83 @@ export function SettingsPage(): JSX.Element {
             updateSetting.mutate({ key: "ai_suggestions", value: v });
           }}
         />
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-xs font-medium text-fg">
+            <Key size={13} className="text-accent" />
+            AI provider
+          </div>
+          <AccentSelect
+            value={settings.ai_provider}
+            onChange={(v) => {
+              const provider = AI_PROVIDERS.find((p) => p.id === v) ?? AI_PROVIDERS[0];
+              localUpdate("ai_provider", v);
+              updateSetting.mutate({ key: "ai_provider", value: v as never });
+              // Auto-set default model when provider changes
+              if (provider && settings.ai_model === "") {
+                localUpdate("ai_model", provider.defaultModel);
+                updateSetting.mutate({ key: "ai_model", value: provider.defaultModel as never });
+              }
+            }}
+            options={AI_PROVIDERS.map((p) => ({ value: p.id, label: p.label }))}
+          />
+          <div className="space-y-1">
+            <label className="block text-[11px] font-medium text-fg-muted">
+              API key
+            </label>
+            <ApiKeyInput
+              value={settings.ai_api_key}
+              placeholder={AI_PROVIDERS.find((p) => p.id === settings.ai_provider)?.keyPlaceholder ?? "API key"}
+              onChange={(v) => {
+                localUpdate("ai_api_key", v);
+                updateSetting.mutate({ key: "ai_api_key", value: v as never });
+              }}
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="block text-[11px] font-medium text-fg-muted">
+              Model
+            </label>
+            <input
+              type="text"
+              value={settings.ai_model}
+              placeholder={AI_PROVIDERS.find((p) => p.id === settings.ai_provider)?.defaultModel ?? ""}
+              onChange={(e) => {
+                const v = e.target.value;
+                localUpdate("ai_model", v);
+                updateSetting.mutate({ key: "ai_model", value: v as never });
+              }}
+              className="w-full px-3 py-1.5 rounded-lg bg-bg-subtle border border-border text-xs text-fg outline-none focus:ring-1 focus:ring-accent/40 focus:border-accent/30 transition-colors"
+            />
+          </div>
+          <p className="text-[10px] text-fg-subtle leading-relaxed">
+            Set env var <code className="px-1 py-0.5 rounded bg-bg-subtle text-accent/80">AI_API_KEY</code> and{" "}
+            <code className="px-1 py-0.5 rounded bg-bg-subtle text-accent/80">AI_PROVIDER=gemini|openrouter|nvidia_nim|deepseek</code>{" "}
+            on the backend, or store the key here. Restart backend to apply.
+          </p>
+        </div>
+      </SettingsSection>
+
+      <SettingsSection
+        title="Tracking"
+        description="Fine-tune what FlowSense captures."
+      >
         <ToggleRow
-          label="Gemini integration"
-          description="Use Gemini for richer explanations."
-          checked={settings.gemini_enabled}
+          label="Terminal tracking"
+          description="Capture active terminal and shell context."
+          checked={settings.terminal_tracking}
           onChange={(v) => {
-            localUpdate("gemini_enabled", v);
-            updateSetting.mutate({ key: "gemini_enabled", value: v });
+            localUpdate("terminal_tracking", v);
+            updateSetting.mutate({ key: "terminal_tracking", value: v });
           }}
-          disabled={!settings.ai_suggestions}
+        />
+        <ToggleRow
+          label="Browser URL tracking"
+          description="Capture URLs from browser tabs (Chrome/Edge/Firefox)."
+          checked={settings.browser_url_tracking}
+          onChange={(v) => {
+            localUpdate("browser_url_tracking", v);
+            updateSetting.mutate({ key: "browser_url_tracking", value: v });
+          }}
         />
       </SettingsSection>
 
@@ -204,6 +273,39 @@ export function SettingsPage(): JSX.Element {
 
       <div className="text-[10px] text-fg-subtle text-center pt-4">
         FlowSense v0.1.0 · Made with care
+      </div>
+    </div>
+  );
+}
+
+function ApiKeyInput({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}): JSX.Element {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="flex items-center gap-2">
+      <div className="relative flex-1">
+        <input
+          type={show ? "text" : "password"}
+          value={value}
+          placeholder={placeholder}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full px-3 py-1.5 pr-8 rounded-lg bg-bg-subtle border border-border text-xs text-fg outline-none focus:ring-1 focus:ring-accent/40 focus:border-accent/30 transition-colors font-mono"
+        />
+        <button
+          type="button"
+          onClick={() => setShow((s) => !s)}
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-fg-subtle hover:text-fg transition-colors"
+          aria-label={show ? "Hide key" : "Show key"}
+        >
+          {show ? <EyeOff size={12} /> : <Eye size={12} />}
+        </button>
       </div>
     </div>
   );

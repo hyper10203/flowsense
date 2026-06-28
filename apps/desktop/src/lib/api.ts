@@ -69,6 +69,13 @@ export const api = {
     list: () => request<Workflow[]>("/workflows"),
     dismiss: async (id: number) => { await request<void>(`/workflows/${id}/dismiss`, { method: "POST" }); },
     accept: async (id: number) => { await request<void>(`/workflows/${id}/accept`, { method: "POST" }); },
+    rename: async (id: number, name: string) => {
+      const r = await request<{ success: boolean; name: string }>(`/workflows/${id}/rename`, {
+        method: "PATCH",
+        body: JSON.stringify({ name }),
+      });
+      return r;
+    },
   },
   flows: {
     start: (workflowId: number) =>

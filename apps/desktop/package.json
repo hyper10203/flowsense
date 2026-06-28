@@ -54,7 +54,13 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "installerIcon": "public/icon.ico"
+      "installerIcon": "public/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "startMenuFolder": "FlowSense",
+      "runAfterFinish": true,
+      "includeAssociations": false,
+      "warningsAsErrors": false
     },
     "mac": {
       "target": "dmg"

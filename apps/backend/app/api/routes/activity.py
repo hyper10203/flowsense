@@ -23,6 +23,7 @@ class ActivityCreate(BaseModel):
     application: str = Field(min_length=1, max_length=255)
     window_title: str = Field(default="", max_length=512)
     url: str | None = Field(default=None, max_length=2048)
+    command_line: str | None = Field(default=None, max_length=1024)
     event_type: str = Field(default="window_focus", max_length=50)
     duration_ms: int = Field(default=0, ge=0)
     session_id: str | None = Field(default=None, max_length=100)
@@ -103,6 +104,7 @@ def create_activity(body: ActivityCreate, db: Session = Depends(get_db)):
             application=body.application,
             window_title=body.window_title,
             url=body.url,
+            command_line=body.command_line,
             event_type=body.event_type,
             duration_ms=body.duration_ms,
             session_id=body.session_id,
@@ -142,6 +144,7 @@ def list_activities(
                 "application": a.application,
                 "window_title": a.window_title,
                 "url": a.url,
+                "command_line": a.command_line,
                 "event_type": a.event_type,
                 "duration_ms": a.duration_ms,
                 "session_id": a.session_id,

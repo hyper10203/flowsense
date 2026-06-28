@@ -22,7 +22,6 @@ const NAV: NavItem[] = [
   { route: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={16} /> },
   { route: "timeline", label: "Timeline", icon: <Activity size={16} /> },
   { route: "workflows", label: "Workflows", icon: <Workflow size={16} /> },
-  { route: "suggestions", label: "Suggestions", icon: <Sparkles size={16} /> },
   { route: "analytics", label: "Analytics", icon: <BarChart3 size={16} /> },
   { route: "search", label: "Search", icon: <Search size={16} />, shortcut: "Ctrl+K" },
   { route: "settings", label: "Settings", icon: <Settings size={16} />, shortcut: "Ctrl+," },

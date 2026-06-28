@@ -1,13 +1,13 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useApp } from "./store.jsx";
 import { useActiveFlow, useStopFlow } from "./hooks/use-api.js";
 import { AppShell } from "./components/layout/AppShell.jsx";
 import { ToastViewport } from "./components/ui/Toast.jsx";
 import { FlowOverlay } from "./components/flow/FlowOverlay.jsx";
+import { InstallerPrompts } from "./components/onboarding/InstallerPrompts.jsx";
 import { DashboardPage } from "./pages/Dashboard.jsx";
 import { TimelinePage } from "./pages/Timeline.jsx";
 import { WorkflowsPage } from "./pages/Workflows.jsx";
-import { SuggestionsPage } from "./pages/Suggestions.jsx";
 import { AnalyticsPage } from "./pages/Analytics.jsx";
 import { SearchPage } from "./pages/Search.jsx";
 import { SettingsPage } from "./pages/Settings.jsx";
@@ -21,8 +21,6 @@ function ActivePage(): JSX.Element {
       return <TimelinePage />;
     case "workflows":
       return <WorkflowsPage />;
-    case "suggestions":
-      return <SuggestionsPage />;
     case "analytics":
       return <AnalyticsPage />;
     case "search":
@@ -58,6 +56,9 @@ function FlowModeLayer(): JSX.Element | null {
 export function App(): JSX.Element {
   const { setRoute, setActiveFlow, activeFlow } = useApp();
   const stopFlow = useStopFlow();
+  const [showInstaller, setShowInstaller] = useState(
+    () => localStorage.getItem("flowsense:installerSeen") !== "1"
+  );
 
   const handleToggleFlow = useCallback(() => {
     if (activeFlow) {
@@ -78,6 +79,13 @@ export function App(): JSX.Element {
       </AppShell>
       <FlowModeLayer />
       <ToastViewport />
+      <InstallerPrompts
+        open={showInstaller}
+        onClose={() => {
+          localStorage.setItem("flowsense:installerSeen", "1");
+          setShowInstaller(false);
+        }}
+      />
     </div>
   );
 }

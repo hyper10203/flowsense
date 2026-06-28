@@ -1,4 +1,4 @@
-export type EventType = "window_focus" | "browser_tab" | "idle_resume" | "idle_start";
+export type EventType = "window_focus" | "browser_tab" | "terminal" | "idle_resume" | "idle_start";
 
 export interface ActivityEvent {
   id?: number;
@@ -6,6 +6,7 @@ export interface ActivityEvent {
   application: string;
   window_title: string;
   url?: string | null;
+  command_line?: string | null;
   event_type: EventType;
   duration_ms: number;
   session_id?: string | null;
@@ -17,6 +18,7 @@ export interface ActivityCreateRequest {
   application: string;
   window_title: string;
   url?: string | null;
+  command_line?: string | null;
   event_type: EventType;
   duration_ms: number;
   session_id?: string | null;

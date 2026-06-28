@@ -8,6 +8,7 @@ import { NotificationManager } from "./notification-manager.js";
 import { TrayManager } from "./tray-manager.js";
 import { IPC } from "./ipc-channels.js";
 import { showOverlay, updateOverlay, hideOverlay, type OverlayState } from "./overlay-window.js";
+import { createDesktopShortcut, pinToTaskbar, createDesktopShortcutAndPinTaskbar } from "./shortcuts.js";
 import { DEFAULT_SETTINGS } from "@flowsense/shared";
 
 export interface IpcDependencies {
@@ -122,6 +123,17 @@ export function registerIpcHandlers(deps: IpcDependencies): void {
   });
   ipcMain.handle(IPC.OVERLAY_HIDE, () => {
     hideOverlay();
+  });
+
+  // Shortcut creation
+  ipcMain.handle("shortcut:desktop", () => {
+    try { createDesktopShortcut(); return true; } catch { return false; }
+  });
+  ipcMain.handle("shortcut:taskbar", () => {
+    try { pinToTaskbar(); return true; } catch { return false; }
+  });
+  ipcMain.handle("shortcut:install", () => {
+    try { createDesktopShortcutAndPinTaskbar(); return true; } catch { return false; }
   });
 
   ipcMain.handle(IPC.APP_OPEN, (_e, appName: string) => {

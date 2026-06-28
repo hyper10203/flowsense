@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import {
   Clock,
   Layers,
+  Play,
   RefreshCw,
   TrendingUp,
   Zap,
@@ -11,6 +12,7 @@ import {
   useActivityStream,
   useAnalyticsSummary,
   useHourlyActivity,
+  useWorkflows,
 } from "../hooks/use-api.js";
 import { ActivityFeed } from "../components/dashboard/ActivityFeed.jsx";
 import { AppUsageChart } from "../components/dashboard/AppUsageChart.jsx";
@@ -19,6 +21,8 @@ import { StatCard } from "../components/dashboard/StatCard.jsx";
 import { ErrorState } from "../components/ui/ErrorState.jsx";
 import { Skeleton } from "../components/ui/Skeleton.jsx";
 import { formatMinutes } from "../lib/utils.js";
+import { useApp } from "../store.jsx";
+import { useStartFlow } from "../hooks/use-api.js";
 
 export function DashboardPage(): JSX.Element {
   // Mount the stream so IPC activity events get forwarded to the backend.
@@ -40,9 +44,13 @@ export function DashboardPage(): JSX.Element {
   } = useAnalyticsSummary();
 
   const { data: hourlyData } = useHourlyActivity();
+  const { data: workflows } = useWorkflows();
+  const startFlow = useStartFlow();
+  const { setRoute } = useApp();
 
   const activityItems = activityData?.items ?? [];
   const analytics = analyticsData;
+  const savedWorkflows = (workflows ?? []).slice(0, 6);
 
   const todayMinutes = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
@@ -136,6 +144,53 @@ export function DashboardPage(): JSX.Element {
           </>
         )}
       </div>
+
+      {/* Saved workflows — front and center on the home screen */}
+      {savedWorkflows.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-fg-subtle uppercase tracking-wider">
+              Your workflows
+            </h2>
+            <button
+              type="button"
+              onClick={() => setRoute("workflows")}
+              className="text-[11px] text-accent hover:text-accent/80 transition-colors"
+            >
+              View all →
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {savedWorkflows.map((wf) => (
+              <div
+                key={wf.id}
+                className="group flex items-center gap-3 p-3 rounded-xl bg-bg-elevated/60 border border-border/50 hover:border-accent/30 hover:bg-bg-elevated transition-colors"
+              >
+                <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                  <Zap size={14} className="text-accent" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-semibold text-fg truncate">
+                    {wf.ai_name ?? "Untitled workflow"}
+                  </div>
+                  <div className="text-[10px] text-fg-subtle">
+                    {wf.frequency}× · {Math.round(wf.confidence * 100)}% conf
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => startFlow.mutate(wf.id)}
+                  className="opacity-0 group-hover:opacity-100 flex items-center gap-1 px-2 py-1 rounded-md bg-accent/10 hover:bg-accent/20 text-accent text-[10px] font-medium transition-all shrink-0"
+                  aria-label={`Start ${wf.ai_name ?? "workflow"}`}
+                >
+                  <Play size={9} className="fill-accent" />
+                  Start
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2">

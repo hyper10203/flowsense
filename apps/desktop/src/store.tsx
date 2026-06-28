@@ -15,7 +15,6 @@ export type Route =
   | "dashboard"
   | "timeline"
   | "workflows"
-  | "suggestions"
   | "analytics"
   | "search"
   | "settings";
