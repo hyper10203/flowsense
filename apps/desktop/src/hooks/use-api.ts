@@ -72,6 +72,15 @@ export function useAppUsage() {
   });
 }
 
+export function useHourlyActivity() {
+  return useQuery<{ hour: string; minutes: number }[], ApiError>({
+    queryKey: ["hourly-activity"],
+    queryFn: api.analytics.hourly,
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
+}
+
 export function useWorkflows() {
   return useQuery<Workflow[], ApiError>({
     queryKey: ["workflows"],

@@ -61,6 +61,7 @@ export const api = {
     dailyTrend: (days = 30) =>
       request<DailyTrendPoint[]>(`/analytics/trend?days=${days}`),
     appUsage: () => request<AppUsagePoint[]>(`/analytics/app-usage`),
+    hourly: () => request<{ hour: string; minutes: number }[]>("/analytics/hourly"),
   },
   workflows: {
     list: () => request<Workflow[]>("/workflows"),

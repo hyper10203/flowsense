@@ -10,6 +10,7 @@ import {
   useActivityList,
   useActivityStream,
   useAnalyticsSummary,
+  useHourlyActivity,
 } from "../hooks/use-api.js";
 import { ActivityFeed } from "../components/dashboard/ActivityFeed.jsx";
 import { AppUsageChart } from "../components/dashboard/AppUsageChart.jsx";
@@ -37,6 +38,8 @@ export function DashboardPage(): JSX.Element {
     isError: analyticsError,
     refetch: refetchAnalytics,
   } = useAnalyticsSummary();
+
+  const { data: hourlyData } = useHourlyActivity();
 
   const activityItems = activityData?.items ?? [];
   const analytics = analyticsData;
@@ -136,7 +139,7 @@ export function DashboardPage(): JSX.Element {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2">
-          <HourlyChart loading={analyticsLoading} />
+          <HourlyChart data={hourlyData} loading={analyticsLoading} />
         </div>
         <div>
           <AppUsageChart loading={analyticsLoading} />

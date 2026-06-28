@@ -53,3 +53,13 @@ def trend(
     db: Session = Depends(get_db),
 ):
     return analytics_service.daily_trend(db, days=days)
+
+
+@router.get("/app-usage")
+def app_usage(db: Session = Depends(get_db)):
+    return analytics_service.app_breakdown(db)
+
+
+@router.get("/hourly")
+def hourly(db: Session = Depends(get_db)):
+    return analytics_service.hourly_breakdown(db)
