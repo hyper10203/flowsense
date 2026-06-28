@@ -16,6 +16,7 @@ TRACKING_PARAMS = {
 }
 
 PROCESS_NAME_MAP = {
+    # With .exe extension (from some capture paths)
     "chrome.exe": "Chrome",
     "msedge.exe": "Edge",
     "firefox.exe": "Firefox",
@@ -23,6 +24,7 @@ PROCESS_NAME_MAP = {
     "cursor.exe": "Cursor",
     "idea64.exe": "IntelliJ",
     "terminal.exe": "Terminal",
+    "windowsterminal.exe": "Terminal",
     "explorer.exe": "File Explorer",
     "discord.exe": "Discord",
     "slack.exe": "Slack",
@@ -32,6 +34,35 @@ PROCESS_NAME_MAP = {
     "winword.exe": "Word",
     "excel.exe": "Excel",
     "powerpnt.exe": "PowerPoint",
+    "electron.exe": "Electron",
+    "devenv.exe": "Visual Studio",
+    "postman.exe": "Postman",
+    "notepad++.exe": "Notepad++",
+    "pwsh.exe": "PowerShell",
+    # Without .exe (from Get-Process ProcessName)
+    "chrome": "Chrome",
+    "msedge": "Edge",
+    "firefox": "Firefox",
+    "code": "VS Code",
+    "cursor": "Cursor",
+    "idea64": "IntelliJ",
+    "terminal": "Terminal",
+    "windowsterminal": "Terminal",
+    "explorer": "File Explorer",
+    "discord": "Discord",
+    "slack": "Slack",
+    "spotify": "Spotify",
+    "notion": "Notion",
+    "figma": "Figma",
+    "winword": "Word",
+    "excel": "Excel",
+    "powerpnt": "PowerPoint",
+    "electron": "Electron",
+    "devenv": "Visual Studio",
+    "postman": "Postman",
+    "notepad++": "Notepad++",
+    "pwsh": "PowerShell",
+    "flowsense": "FlowSense",
 }
 
 

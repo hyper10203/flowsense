@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from typing import Annotated
 
@@ -6,9 +7,15 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.models.activity import Activity
 from app.services import activity_service
 
 router = APIRouter(prefix="/activity", tags=["activity"])
+
+logger = logging.getLogger(__name__)
+
+_DETECTION_COUNTER = 0
+_DETECTION_INTERVAL = 20
 
 
 class ActivityCreate(BaseModel):
@@ -26,6 +33,67 @@ class ActivityResponse(BaseModel):
     id: int | None = None
 
 
+def _maybe_run_detection(db: Session) -> None:
+    global _DETECTION_COUNTER
+    _DETECTION_COUNTER += 1
+    if _DETECTION_COUNTER % _DETECTION_INTERVAL != 0:
+        return
+    try:
+        from app.algorithms.normalizer import normalize_events
+        from app.services import workflow_service
+        from app.services.ai_service import name_workflow
+        from app.services.suggestion_service import create_suggestion_for_workflow
+        from app.core.config import settings as app_settings
+
+        events = db.query(Activity).order_by(Activity.timestamp.asc()).limit(5000).all()
+        normalized = [
+            {
+                "application": e.application,
+                "window_title": e.window_title,
+                "url": e.url,
+                "timestamp": e.timestamp.isoformat() if hasattr(e.timestamp, "isoformat") else str(e.timestamp),
+            }
+            for e in events
+        ]
+        norm_events = normalize_events(normalized)
+        detected = workflow_service.run_detection(db, norm_events)
+
+        if not detected:
+            return
+
+        # Lower thresholds for auto-detection: accept fewer observations
+        for det in detected:
+            wf = workflow_service.save_detected_workflow(db, det)
+
+            # AI naming if not yet named and Gemini is configured
+            if wf.ai_name is None and app_settings.gemini_api_key:
+                import asyncio
+                try:
+                    result = asyncio.run(
+                        name_workflow(det.steps, det.frequency, det.confidence)
+                    )
+                    if result:
+                        wf.ai_name = result.get("name")
+                        wf.description = result.get("description")
+                        wf.automation_suggestion = result.get("suggestion")
+                except Exception:
+                    pass
+
+            # Fallback: generate a name from steps if AI didn't provide one
+            if wf.ai_name is None:
+                step_names = " → ".join(det.steps)
+                wf.ai_name = step_names if len(step_names) <= 100 else step_names[:97] + "..."
+                wf.description = f"You switch between {', '.join(det.steps)} {det.frequency} times."
+
+            # Auto-create suggestion for detected workflows
+            create_suggestion_for_workflow(db, wf)
+
+        db.commit()
+        logger.info("Auto-detected %d workflows", len(detected))
+    except Exception as exc:
+        logger.error("Auto-detection failed: %s", exc)
+
+
 @router.post("", response_model=ActivityResponse)
 def create_activity(body: ActivityCreate, db: Session = Depends(get_db)):
     try:
@@ -40,6 +108,7 @@ def create_activity(body: ActivityCreate, db: Session = Depends(get_db)):
             session_id=body.session_id,
         )
         db.commit()
+        _maybe_run_detection(db)
         return ActivityResponse(success=True, id=activity.id)
     except Exception as exc:
         db.rollback()

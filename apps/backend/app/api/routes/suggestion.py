@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -32,3 +32,21 @@ def list_suggestions(db: Session = Depends(get_db)):
         }
         for s in items
     ]
+
+
+@router.post("/{suggestion_id}/accept")
+def accept_suggestion(suggestion_id: int, db: Session = Depends(get_db)):
+    s = suggestion_service.set_suggestion_status(db, suggestion_id, "accepted")
+    if s is None:
+        raise HTTPException(status_code=404, detail="Suggestion not found")
+    db.commit()
+    return {"success": True}
+
+
+@router.post("/{suggestion_id}/dismiss")
+def dismiss_suggestion(suggestion_id: int, db: Session = Depends(get_db)):
+    s = suggestion_service.set_suggestion_status(db, suggestion_id, "dismissed")
+    if s is None:
+        raise HTTPException(status_code=404, detail="Suggestion not found")
+    db.commit()
+    return {"success": True}

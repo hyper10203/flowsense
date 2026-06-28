@@ -19,11 +19,11 @@ class Settings(BaseSettings):
     gemini_max_tokens: int = 300
     gemini_timeout_seconds: int = 15
 
-    workflow_min_confidence: float = 0.75
-    workflow_min_frequency: int = 3
-    workflow_min_steps: int = 3
+    workflow_min_confidence: float = 0.3
+    workflow_min_frequency: int = 2
+    workflow_min_steps: int = 2
     workflow_max_steps: int = 8
-    workflow_max_gap_minutes: int = 10
+    workflow_max_gap_minutes: int = 60
 
     default_polling_interval: int = 5
     log_level: str = "INFO"
