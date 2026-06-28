@@ -6,7 +6,6 @@ import { EmptyState } from "../components/ui/EmptyState.jsx";
 import { Skeleton } from "../components/ui/Skeleton.jsx";
 import { SearchBar } from "../components/search/SearchBar.jsx";
 import { TimelineItem } from "../components/timeline/TimelineItem.jsx";
-import { buildMockActivity } from "../lib/mock-data.js";
 import { ipc } from "../lib/ipc.js";
 
 function fuzzy(haystack: string, needle: string): boolean {
@@ -30,8 +29,7 @@ export function SearchPage(): JSX.Element {
     return () => clearTimeout(t);
   }, [query]);
 
-  const mockItems = useMemo(() => buildMockActivity(200).items, []);
-  const events = useMemo(() => data?.items ?? mockItems, [data, mockItems]);
+  const events = data?.items ?? [];
 
   const filtered = useMemo(() => {
     if (!debounced.trim()) return events.slice(0, 20);

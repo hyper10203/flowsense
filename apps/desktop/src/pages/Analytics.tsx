@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import {
   Activity,
+  BarChart3,
   Clock,
   Layers,
   TrendingUp,
@@ -13,16 +14,11 @@ import {
   useWorkflows,
 } from "../hooks/use-api.js";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { EmptyState } from "../components/ui/EmptyState.jsx";
 import { ErrorState } from "../components/ui/ErrorState.jsx";
 import { Skeleton } from "../components/ui/Skeleton.jsx";
 import { MetricCard } from "../components/analytics/MetricCard.jsx";
 import { TrendChart } from "../components/analytics/TrendChart.jsx";
-import {
-  buildMockAnalytics,
-  buildMockAppUsage,
-  buildMockDailyTrend,
-  buildMockWorkflows,
-} from "../lib/mock-data.js";
 import { formatMinutes } from "../lib/utils.js";
 
 const COLORS = ["#7c5cff", "#3dd980", "#f5b731", "#ff5c7a", "#3aa0ff", "#9279ff"];
@@ -33,10 +29,22 @@ export function AnalyticsPage(): JSX.Element {
   const { data: usage } = useAppUsage();
   const { data: workflows } = useWorkflows();
 
-  const s = useMemo(() => summary ?? buildMockAnalytics(), [summary]);
-  const t = useMemo(() => trend ?? buildMockDailyTrend(30), [trend]);
-  const u = useMemo(() => usage ?? buildMockAppUsage(), [usage]);
-  const w = useMemo(() => workflows ?? buildMockWorkflows(), [workflows]);
+  const s = summary;
+  const t = trend ?? [];
+  const u = usage ?? [];
+  const w = workflows ?? [];
+
+  if (!isLoading && !summary && !trend && !usage) {
+    return (
+      <div className="p-6">
+        <EmptyState
+          icon={<BarChart3 />}
+          title="No analytics yet"
+          description="Start tracking your apps to see productivity trends and habits here."
+        />
+      </div>
+    );
+  }
 
   if (isError && !summary) {
     return (
@@ -61,7 +69,7 @@ export function AnalyticsPage(): JSX.Element {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {isLoading ? (
+        {isLoading || !s ? (
           <>
             <Skeleton className="h-28" />
             <Skeleton className="h-28" />
@@ -111,7 +119,7 @@ export function AnalyticsPage(): JSX.Element {
         <div className="rounded-xl border border-border-subtle bg-bg-surface p-4">
           <div className="text-sm font-medium text-fg mb-2">App distribution</div>
           <div className="h-64">
-            {isLoading ? (
+            {isLoading || !s ? (
               <Skeleton className="h-full w-full rounded-full" />
             ) : (
               <ResponsiveContainer width="100%" height="100%">
@@ -156,7 +164,7 @@ export function AnalyticsPage(): JSX.Element {
             Top apps by time
           </div>
           <div className="space-y-3">
-            {s.most_used_apps.map((app, i) => {
+            {s?.most_used_apps ? s.most_used_apps.map((app, i) => {
               const total = s.most_used_apps.reduce((a, b) => a + b.minutes, 0);
               const pct = total > 0 ? Math.round((app.minutes / total) * 100) : 0;
               return (
@@ -178,8 +186,7 @@ export function AnalyticsPage(): JSX.Element {
                   </div>
                 </div>
               );
-            })}
-            {s.most_used_apps.length === 0 && (
+            }) : (
               <div className="text-xs text-fg-muted">No apps tracked yet.</div>
             )}
           </div>

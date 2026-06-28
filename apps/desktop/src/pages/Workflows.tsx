@@ -9,14 +9,13 @@ import { ErrorState } from "../components/ui/ErrorState.jsx";
 import { EmptyState } from "../components/ui/EmptyState.jsx";
 import { Skeleton } from "../components/ui/Skeleton.jsx";
 import { WorkflowCard } from "../components/workflows/WorkflowCard.jsx";
-import { buildMockWorkflows } from "../lib/mock-data.js";
 
 export function WorkflowsPage(): JSX.Element {
   const { data, isLoading, isError, refetch } = useWorkflows();
   const accept = useAcceptWorkflow();
   const dismiss = useDismissWorkflow();
 
-  const workflows = useMemo(() => data ?? buildMockWorkflows(), [data]);
+  const workflows = data ?? [];
 
   return (
     <div className="p-6 space-y-4 max-w-4xl mx-auto">

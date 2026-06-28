@@ -9,14 +9,13 @@ import { ErrorState } from "../components/ui/ErrorState.jsx";
 import { EmptyState } from "../components/ui/EmptyState.jsx";
 import { Skeleton } from "../components/ui/Skeleton.jsx";
 import { SuggestionCard } from "../components/suggestions/SuggestionCard.jsx";
-import { buildMockSuggestions } from "../lib/mock-data.js";
 
 export function SuggestionsPage(): JSX.Element {
   const { data, isLoading, isError, refetch } = useSuggestions();
   const accept = useAcceptSuggestion();
   const dismiss = useDismissSuggestion();
 
-  const suggestions = useMemo(() => data ?? buildMockSuggestions(), [data]);
+  const suggestions = data ?? [];
   const pending = useMemo(
     () => suggestions.filter((s) => s.status === "pending"),
     [suggestions]

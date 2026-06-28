@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { Card, CardHeader, CardTitle } from "../ui/Card.jsx";
 import { Skeleton } from "../ui/Skeleton.jsx";
-import { buildMockAppUsage } from "../../lib/mock-data.js";
 import { formatMinutes } from "../../lib/utils.js";
 
 const COLORS = ["#7c5cff", "#3dd980", "#f5b731", "#ff5c7a", "#3aa0ff", "#9279ff"];
@@ -13,7 +12,7 @@ interface AppUsageChartProps {
 }
 
 export function AppUsageChart({ data, loading }: AppUsageChartProps): JSX.Element {
-  const chartData = useMemo(() => data ?? buildMockAppUsage(), [data]);
+  const chartData = data ?? [];
   const total = useMemo(
     () => chartData.reduce((acc, p) => acc + p.minutes, 0),
     [chartData]

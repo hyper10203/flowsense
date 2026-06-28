@@ -9,7 +9,6 @@ import {
   type TimelineFilters,
 } from "../components/timeline/FilterBar.jsx";
 import { TimelineGroup } from "../components/timeline/TimelineGroup.jsx";
-import { buildMockActivity } from "../lib/mock-data.js";
 import { groupBy, startOfDay, startOfMonth, startOfWeek } from "../lib/utils.js";
 import type { ActivityEvent } from "@flowsense/shared";
 
@@ -50,8 +49,7 @@ export function TimelinePage(): JSX.Element {
     limit: pageSize * page,
   });
 
-  const mockItems = useMemo(() => buildMockActivity(100).items, []);
-  const events = useMemo(() => data?.items ?? mockItems, [data, mockItems]);
+  const events = data?.items ?? [];
   const apps = useMemo(
     () => Array.from(new Set(events.map((e) => e.application))).sort(),
     [events]

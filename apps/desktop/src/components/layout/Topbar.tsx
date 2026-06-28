@@ -67,7 +67,7 @@ export function Topbar({
           Search apps, URLs, titles…
         </span>
         <kbd className="font-mono text-[10px] text-fg-subtle bg-bg-subtle border border-border-subtle rounded px-1.5 py-0.5">
-          ⌘K
+          Ctrl+K
         </kbd>
       </button>
 
@@ -100,7 +100,7 @@ export function Topbar({
           variant="ghost"
           size="icon"
           onClick={onRefresh}
-          title="Refresh (⌘R)"
+          title="Refresh (Ctrl+R)"
         >
           <RefreshCw size={14} />
         </Button>
@@ -116,7 +116,7 @@ export function Topbar({
           variant="ghost"
           size="icon"
           onClick={onSettings}
-          title="Settings (⌘,)"
+          title="Settings (Ctrl+,)"
         >
           <Settings size={14} />
         </Button>
@@ -128,7 +128,7 @@ export function Topbar({
           title={
             backendReachable
               ? "Connected to backend"
-              : "Backend unreachable — using mock data"
+              : "Backend unreachable — start backend to see live data"
           }
         />
       </div>
