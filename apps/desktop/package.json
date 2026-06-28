@@ -2,6 +2,7 @@
   "name": "flowsense-desktop",
   "version": "0.1.0",
   "private": true,
+  "author": "Subham",
   "description": "FlowSense — AI-powered desktop focus companion",
   "main": "out/main/main.js",
   "type": "module",
@@ -29,7 +30,7 @@
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.0",
     "autoprefixer": "^10.4.20",
-    "electron": "^33.0.0",
+    "electron": "33.4.11",
     "electron-builder": "^25.1.0",
     "electron-vite": "^2.3.0",
     "postcss": "^8.4.47",
@@ -49,7 +50,13 @@
       "out/**/*"
     ],
     "win": {
-      "target": "nsis"
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "signAndEditExecutable": false
     },
     "nsis": {
       "oneClick": false,
@@ -57,9 +64,8 @@
       "installerIcon": "public/icon.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "startMenuFolder": "FlowSense",
+      "menuCategory": "FlowSense",
       "runAfterFinish": true,
-      "includeAssociations": false,
       "warningsAsErrors": false
     },
     "mac": {
