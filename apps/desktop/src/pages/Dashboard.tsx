@@ -6,17 +6,24 @@ import {
   TrendingUp,
   Zap,
 } from "lucide-react";
-import { useActivityList, useAnalyticsSummary } from "../hooks/use-api.js";
+import {
+  useActivityList,
+  useActivityStream,
+  useAnalyticsSummary,
+} from "../hooks/use-api.js";
 import { ActivityFeed } from "../components/dashboard/ActivityFeed.jsx";
 import { AppUsageChart } from "../components/dashboard/AppUsageChart.jsx";
 import { HourlyChart } from "../components/dashboard/HourlyChart.jsx";
 import { StatCard } from "../components/dashboard/StatCard.jsx";
 import { ErrorState } from "../components/ui/ErrorState.jsx";
 import { Skeleton } from "../components/ui/Skeleton.jsx";
-import { buildMockActivity, buildMockAnalytics } from "../lib/mock-data.js";
 import { formatMinutes } from "../lib/utils.js";
 
 export function DashboardPage(): JSX.Element {
+  // Mount the stream so IPC activity events get forwarded to the backend.
+  // The returned local events are a mirror of what the backend now stores.
+  useActivityStream();
+
   const {
     data: activityData,
     isLoading: activityLoading,
@@ -31,16 +38,8 @@ export function DashboardPage(): JSX.Element {
     refetch: refetchAnalytics,
   } = useAnalyticsSummary();
 
-  const mockActivity = useMemo(() => buildMockActivity(50), []);
-  const activity = useMemo(
-    () => activityData ?? mockActivity,
-    [activityData, mockActivity]
-  );
-  const activityItems = activity.items;
-  const analytics = useMemo(
-    () => analyticsData ?? buildMockAnalytics(),
-    [analyticsData]
-  );
+  const activityItems = activityData?.items ?? [];
+  const analytics = analyticsData;
 
   const todayMinutes = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
@@ -49,14 +48,12 @@ export function DashboardPage(): JSX.Element {
       .reduce((acc, e) => acc + e.duration_ms, 0);
   }, [activityItems]);
 
-  const mostUsed = analytics.most_used_apps[0];
-
   if (activityError && analyticsError) {
     return (
       <div className="p-6">
         <ErrorState
           title="Couldn't load dashboard"
-          description="Backend is unreachable and mock data failed to load."
+          description="Backend is unreachable. Start the backend and refresh."
           onRetry={() => {
             refetchActivity();
             refetchAnalytics();
@@ -108,16 +105,18 @@ export function DashboardPage(): JSX.Element {
             />
             <StatCard
               label="Most used"
-              value={mostUsed?.application ?? "—"}
+              value={analytics?.most_used_apps[0]?.application ?? "—"}
               hint={
-                mostUsed ? formatMinutes(mostUsed.minutes) : "No data yet"
+                analytics?.most_used_apps[0]
+                  ? formatMinutes(analytics.most_used_apps[0].minutes)
+                  : "No data yet"
               }
               icon={<TrendingUp size={20} />}
               delay={0.05}
             />
             <StatCard
               label="App switches"
-              value={analytics.app_switches}
+              value={analytics?.app_switches ?? 0}
               hint="today"
               icon={<Layers size={20} />}
               accent="success"
@@ -125,7 +124,7 @@ export function DashboardPage(): JSX.Element {
             />
             <StatCard
               label="Workflows"
-              value={analytics.workflow_count}
+              value={analytics?.workflow_count ?? 0}
               hint="detected"
               icon={<Zap size={20} />}
               accent="warning"

@@ -95,10 +95,12 @@ function toggleMonitoring(): void {
     monitor.stop();
     tray.setMonitoring(false);
     notifications.notifyTrackingStopped();
+    mainWindow?.webContents.send(IPC.MONITORING_STATE_CHANGED, false);
   } else {
     monitor.start();
     tray.setMonitoring(true);
     notifications.notifyTrackingStarted();
+    mainWindow?.webContents.send(IPC.MONITORING_STATE_CHANGED, true);
   }
 }
 
@@ -152,6 +154,13 @@ app.whenReady().then(() => {
   setupIpc();
   tray.create();
   createMainWindow();
+  // Auto-start tracking once the window is ready so activity data flows
+  // without requiring the user to click the tray/button.
+  mainWindow?.once("ready-to-show", () => {
+    monitor.start();
+    tray.setMonitoring(true);
+    mainWindow?.webContents.send(IPC.MONITORING_STATE_CHANGED, true);
+  });
 });
 
 app.on("window-all-closed", () => {

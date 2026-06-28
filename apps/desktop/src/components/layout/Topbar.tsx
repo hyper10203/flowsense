@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Button } from "../ui/Button.jsx";
 import { cn } from "../../lib/utils.js";
+import { ipc } from "../../lib/ipc.js";
 import { useApp } from "../../store.jsx";
 
 interface TopbarProps {
@@ -25,6 +26,14 @@ export function Topbar({
     useApp();
   const [searchFocused, setSearchFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
+
+  // Keep store's monitoring flag in sync with electron (e.g. auto-start).
+  useEffect(() => {
+    ipc().monitoring.status().then((s) => {
+      if (s.active !== monitoring) setMonitoring(s.active);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

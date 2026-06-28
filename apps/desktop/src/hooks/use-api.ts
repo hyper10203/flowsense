@@ -174,6 +174,9 @@ export function useActivityStream(): ActivityEvent[] {
     const unsub = ipc().activity.onTracked((payload) => {
       const p = payload as ActivityEvent;
       setEvents((prev) => [p, ...prev].slice(0, 200));
+      // Forward to backend so Dashboard (useActivityList) sees real data.
+      // Fire-and-forget — failure is silent, local state still updates.
+      void trackActivityLocally(p);
     });
     return () => {
       unsub();

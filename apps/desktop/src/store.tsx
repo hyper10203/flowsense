@@ -162,6 +162,16 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
     };
   }, []);
 
+  // Keep `monitoring` state in sync with electron (auto-start, tray toggles).
+  useEffect(() => {
+    const unsub = ipc().monitoring.onStateChanged((active) => {
+      setMonitoringState(active);
+    });
+    return () => {
+      unsub();
+    };
+  }, []);
+
   const value = useMemo<AppState>(
     () => ({
       route,
