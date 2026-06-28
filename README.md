@@ -156,6 +156,20 @@ If AI is enabled, it only receives a tiny normalized workflow summary like `Chro
 
 ---
 
+## AI Usage Declaration
+
+FlowSense uses AI in one narrow, optional role: **naming and summarizing detected workflows** (e.g. turning `Slack → Linear → Notion` into "Morning standup routine").
+
+- **Provider:** Google Gemini (via API key you supply).
+- **What is sent:** Only a normalized sequence of application names — no window titles, URLs, keystrokes, or personal content.
+- **What is NOT sent:** Everything else. Your raw activity log never leaves your machine.
+- **Control:** AI is fully optional. Set `GEMINI_API_KEY` in `apps/backend/.env` to enable it; without it, FlowSense still tracks, detects, and reports — just with auto-generated names.
+- **No telemetry, no tracking, no cloud accounts.** The only outbound call is the one you explicitly configure.
+
+This project itself was developed with the assistance of **Claude (Anthropic)** for code generation, debugging, and documentation. No Anthropic SDK is bundled in the shipped app, and no user data is shared with Anthropic at runtime.
+
+---
+
 ## Configuration
 
 Backend settings live in `apps/backend/.env`:

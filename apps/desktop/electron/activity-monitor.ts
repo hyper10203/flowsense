@@ -129,21 +129,19 @@ export class ActivityMonitor {
       Add-Type @"
       using System;
       using System.Runtime.InteropServices;
-      public struct RECT { public int Left, Top, Right, Bottom; }
       public class Win {
         [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
         [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
-        [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
         [DllImport("user32.dll")] public static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder lpString, int nMaxCount);
       }
       "@
       $hwnd = [Win]::GetForegroundWindow()
-      $pid = 0
-      [Win]::GetWindowThreadProcessId($hwnd, [ref]$pid) | Out-Null
+      $targetPid = 0
+      [Win]::GetWindowThreadProcessId($hwnd, [ref]$targetPid) | Out-Null
       $sb = New-Object System.Text.StringBuilder 512
       [Win]::GetWindowText($hwnd, $sb, 512) | Out-Null
       $title = $sb.ToString()
-      $proc = Get-Process -Id $pid -ErrorAction SilentlyContinue
+      $proc = Get-Process -Id $targetPid -ErrorAction SilentlyContinue
       $name = if ($proc) { $proc.ProcessName } else { "Unknown" }
       Write-Output "APP|$name"
       Write-Output "TITLE|$title"
