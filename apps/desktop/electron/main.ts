@@ -44,6 +44,7 @@ function resolvePreloadPath(): string {
 function createMainWindow(): void {
   mainWindow = new BrowserWindow({
     title: "FlowSense",
+    icon: path.join(__dirname, "..", "public", "icon.png"),
     width: 1440,
     height: 900,
     minWidth: 1024,
