@@ -24,8 +24,8 @@ const NAV: NavItem[] = [
   { route: "workflows", label: "Workflows", icon: <Workflow size={16} /> },
   { route: "suggestions", label: "Suggestions", icon: <Sparkles size={16} /> },
   { route: "analytics", label: "Analytics", icon: <BarChart3 size={16} /> },
-  { route: "search", label: "Search", icon: <Search size={16} />, shortcut: "⌘K" },
-  { route: "settings", label: "Settings", icon: <Settings size={16} />, shortcut: "⌘," },
+  { route: "search", label: "Search", icon: <Search size={16} />, shortcut: "Ctrl+K" },
+  { route: "settings", label: "Settings", icon: <Settings size={16} />, shortcut: "Ctrl+," },
 ];
 
 export function Sidebar(): JSX.Element {

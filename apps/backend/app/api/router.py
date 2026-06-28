@@ -5,6 +5,7 @@ from app.api.routes import (
     analytics,
     detect,
     extension,
+    flow,
     search,
     settings,
     suggestion,
@@ -16,6 +17,7 @@ api_router.include_router(activity.router)
 api_router.include_router(workflow.router)
 api_router.include_router(suggestion.router)
 api_router.include_router(analytics.router)
+api_router.include_router(flow.router)
 api_router.include_router(search.router)
 api_router.include_router(settings.router)
 api_router.include_router(extension.router)

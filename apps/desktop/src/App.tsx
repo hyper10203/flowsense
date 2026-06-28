@@ -1,6 +1,9 @@
+import { useCallback } from "react";
 import { useApp } from "./store.jsx";
+import { useActiveFlow, useStopFlow } from "./hooks/use-api.js";
 import { AppShell } from "./components/layout/AppShell.jsx";
 import { ToastViewport } from "./components/ui/Toast.jsx";
+import { FlowOverlay } from "./components/flow/FlowOverlay.jsx";
 import { DashboardPage } from "./pages/Dashboard.jsx";
 import { TimelinePage } from "./pages/Timeline.jsx";
 import { WorkflowsPage } from "./pages/Workflows.jsx";
@@ -31,12 +34,48 @@ function ActivePage(): JSX.Element {
   }
 }
 
+function FlowModeLayer(): JSX.Element | null {
+  const { activeFlow, setActiveFlow } = useApp();
+  const stopFlow = useStopFlow();
+
+  if (!activeFlow || !activeFlow.workflow) return null;
+
+  return (
+    <FlowOverlay
+      session={activeFlow}
+      onClose={() => {
+        stopFlow.mutate({
+          sessionId: activeFlow.id,
+          stepsCompleted: activeFlow.steps_completed,
+        });
+        setActiveFlow(null);
+      }}
+    />
+  );
+}
+
 export function App(): JSX.Element {
+  const { setRoute, setActiveFlow, activeFlow } = useApp();
+  const stopFlow = useStopFlow();
+
+  const handleToggleFlow = useCallback(() => {
+    if (activeFlow) {
+      stopFlow.mutate({
+        sessionId: activeFlow.id,
+        stepsCompleted: activeFlow.steps_completed,
+      });
+      setActiveFlow(null);
+    } else {
+      setRoute("workflows");
+    }
+  }, [activeFlow, setActiveFlow, setRoute, stopFlow]);
+
   return (
     <div className="h-screen w-screen overflow-hidden bg-bg text-fg">
-      <AppShell>
+      <AppShell onToggleFlow={handleToggleFlow}>
         <ActivePage />
       </AppShell>
+      <FlowModeLayer />
       <ToastViewport />
     </div>
   );

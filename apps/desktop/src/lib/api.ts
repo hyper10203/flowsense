@@ -3,7 +3,9 @@ import type {
   ActivityListResponse,
   AnalyticsSummary,
   AppUsagePoint,
+  ActiveFlowSession,
   DailyTrendPoint,
+  FlowSession,
   Settings,
   Suggestion,
   Workflow,
@@ -67,6 +69,22 @@ export const api = {
     list: () => request<Workflow[]>("/workflows"),
     dismiss: async (id: number) => { await request<void>(`/workflows/${id}/dismiss`, { method: "POST" }); },
     accept: async (id: number) => { await request<void>(`/workflows/${id}/accept`, { method: "POST" }); },
+  },
+  flows: {
+    start: (workflowId: number) =>
+      request<{ id: number; workflow_id: number; status: string; steps_completed: number; started_at: string }>("/flows/start", {
+        method: "POST",
+        body: JSON.stringify({ workflow_id: workflowId }),
+      }),
+    stop: (sessionId: number, stepsCompleted = 0) =>
+      request<FlowSession>(`/flows/${sessionId}/stop`, {
+        method: "POST",
+        body: JSON.stringify({ steps_completed: stepsCompleted }),
+      }),
+    active: () => request<ActiveFlowSession | null>("/flows/active"),
+    history: (limit = 50) => request<FlowSession[]>(`/flows/history?limit=${limit}`),
+    updateStep: (sessionId: number, stepsCompleted: number) =>
+      request<{ success: boolean; steps_completed: number }>(`/flows/${sessionId}/step?steps_completed=${stepsCompleted}`, { method: "POST" }),
   },
   suggestions: {
     list: () => request<Suggestion[]>("/suggestions"),

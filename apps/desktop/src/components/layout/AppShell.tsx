@@ -7,9 +7,10 @@ import { useKeyboardShortcuts } from "../../hooks/use-keyboard.js";
 
 interface AppShellProps {
   children: ReactNode;
+  onToggleFlow?: () => void;
 }
 
-export function AppShell({ children }: AppShellProps): JSX.Element {
+export function AppShell({ children, onToggleFlow }: AppShellProps): JSX.Element {
   const { route, setRoute, refreshBackendStatus } = useApp();
 
   const onSearch = useCallback(() => setRoute("search"), [setRoute]);
@@ -19,8 +20,8 @@ export function AppShell({ children }: AppShellProps): JSX.Element {
   }, [refreshBackendStatus]);
 
   const shortcuts = useMemo(
-    () => ({ onSearch, onRefresh, onSettings }),
-    [onSearch, onRefresh, onSettings]
+    () => ({ onSearch, onRefresh, onSettings, onToggleFlow }),
+    [onSearch, onRefresh, onSettings, onToggleFlow]
   );
   useKeyboardShortcuts(shortcuts);
 

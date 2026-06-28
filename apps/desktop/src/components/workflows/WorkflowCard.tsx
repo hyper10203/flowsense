@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, Sparkles, X, Check } from "lucide-react";
+import { ChevronDown, Play, Sparkles, X, Check } from "lucide-react";
 import type { Workflow } from "@flowsense/shared";
 import { Card, CardContent } from "../ui/Card.jsx";
 import { Button } from "../ui/Button.jsx";
@@ -12,6 +12,7 @@ interface WorkflowCardProps {
   workflow: Workflow;
   onAccept: (id: number) => void;
   onDismiss: (id: number) => void;
+  onStartFlow?: (workflowId: number) => void;
   delay?: number;
 }
 
@@ -19,6 +20,7 @@ export function WorkflowCard({
   workflow,
   onAccept,
   onDismiss,
+  onStartFlow,
   delay = 0,
 }: WorkflowCardProps): JSX.Element {
   const [expanded, setExpanded] = useState(false);
@@ -124,6 +126,18 @@ export function WorkflowCard({
                 }}
               >
                 <Check size={14} /> Accept
+              </Button>
+            </div>
+          ) : status === "accepted" && onStartFlow ? (
+            <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border-subtle">
+              <span className="text-xs text-success font-medium">Saved</span>
+              <div className="flex-1" />
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => onStartFlow(workflow.id)}
+              >
+                <Play size={14} /> Start Flow
               </Button>
             </div>
           ) : (

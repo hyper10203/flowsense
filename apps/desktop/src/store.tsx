@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { DEFAULT_SETTINGS, type Settings } from "@flowsense/shared";
+import { DEFAULT_SETTINGS, type ActiveFlowSession, type Settings } from "@flowsense/shared";
 import { ipc } from "./lib/ipc.js";
 
 export type Theme = "dark" | "light";
@@ -32,6 +32,8 @@ interface AppState {
   resetSettings: () => void;
   backendReachable: boolean;
   refreshBackendStatus: () => void;
+  activeFlow: ActiveFlowSession | null;
+  setActiveFlow: (s: ActiveFlowSession | null) => void;
   toasts: ToastEntry[];
   pushToast: (t: Omit<ToastEntry, "id" | "createdAt">) => void;
   dismissToast: (id: string) => void;
@@ -53,6 +55,7 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
   const [monitoring, setMonitoringState] = useState<boolean>(false);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [backendReachable, setBackendReachable] = useState<boolean>(false);
+  const [activeFlow, setActiveFlow] = useState<ActiveFlowSession | null>(null);
   const [toasts, setToasts] = useState<ToastEntry[]>([]);
 
   const refreshBackendStatus = useCallback(async () => {
@@ -185,6 +188,8 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
       resetSettings,
       backendReachable,
       refreshBackendStatus,
+      activeFlow,
+      setActiveFlow,
       toasts,
       pushToast,
       dismissToast,
@@ -200,6 +205,7 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
       resetSettings,
       backendReachable,
       refreshBackendStatus,
+      activeFlow,
       toasts,
       pushToast,
       dismissToast,

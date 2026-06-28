@@ -13,9 +13,11 @@ import {
 import type {
   ActivityEvent,
   ActivityListResponse,
+  ActiveFlowSession,
   AnalyticsSummary,
   AppUsagePoint,
   DailyTrendPoint,
+  FlowSession,
   Settings,
   Suggestion,
   Workflow,
@@ -183,8 +185,6 @@ export function useActivityStream(): ActivityEvent[] {
     const unsub = ipc().activity.onTracked((payload) => {
       const p = payload as ActivityEvent;
       setEvents((prev) => [p, ...prev].slice(0, 200));
-      // Forward to backend so Dashboard (useActivityList) sees real data.
-      // Fire-and-forget — failure is silent, local state still updates.
       void trackActivityLocally(p);
     });
     return () => {
@@ -192,4 +192,54 @@ export function useActivityStream(): ActivityEvent[] {
     };
   }, []);
   return events;
+}
+
+export function useActiveFlow() {
+  return useQuery<ActiveFlowSession | null, ApiError>({
+    queryKey: ["active-flow"],
+    queryFn: api.flows.active,
+    refetchInterval: 5_000,
+    staleTime: 2_000,
+  });
+}
+
+export function useFlowHistory(limit = 50) {
+  return useQuery<FlowSession[], ApiError>({
+    queryKey: ["flow-history", limit],
+    queryFn: () => api.flows.history(limit),
+    refetchInterval: 30_000,
+    staleTime: 15_000,
+  });
+}
+
+export function useStartFlow() {
+  const qc = useQueryClient();
+  return useMutation<{ id: number; workflow_id: number; status: string; steps_completed: number; started_at: string }, ApiError, number>({
+    mutationFn: (workflowId) => api.flows.start(workflowId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["active-flow"] });
+      qc.invalidateQueries({ queryKey: ["flow-history"] });
+      ipc().notifications.show({
+        title: "Flow mode started",
+        body: "Follow the steps to complete your workflow.",
+        silent: true,
+      });
+    },
+  });
+}
+
+export function useStopFlow() {
+  const qc = useQueryClient();
+  return useMutation<FlowSession, ApiError, { sessionId: number; stepsCompleted?: number }>({
+    mutationFn: ({ sessionId, stepsCompleted = 0 }) => api.flows.stop(sessionId, stepsCompleted),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["active-flow"] });
+      qc.invalidateQueries({ queryKey: ["flow-history"] });
+      ipc().notifications.show({
+        title: "Flow mode ended",
+        body: "Great session! Check your history for details.",
+        silent: true,
+      });
+    },
+  });
 }

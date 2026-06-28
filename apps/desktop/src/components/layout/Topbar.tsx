@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   Command,
   Moon,
+  Play,
   RefreshCw,
   Search,
   Settings,
@@ -22,7 +23,7 @@ export function Topbar({
   onRefresh,
   onSettings,
 }: TopbarProps & { onSettings: () => void }): JSX.Element {
-  const { theme, toggleTheme, monitoring, setMonitoring, backendReachable } =
+  const { theme, toggleTheme, monitoring, setMonitoring, backendReachable, activeFlow } =
     useApp();
   const [searchFocused, setSearchFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -88,6 +89,12 @@ export function Topbar({
           />
           {monitoring ? "Live" : "Paused"}
         </div>
+        {activeFlow && (
+          <div className="flex items-center gap-1.5 px-2.5 h-9 rounded-lg text-xs font-medium border bg-accent/10 text-accent border-accent/20">
+            <Play size={10} className="fill-accent" />
+            Flow
+          </div>
+        )}
         <Button
           variant="ghost"
           size="icon"

@@ -1,10 +1,11 @@
-import { useMemo } from "react";
 import { Workflow } from "lucide-react";
 import {
   useAcceptWorkflow,
   useDismissWorkflow,
+  useStartFlow,
   useWorkflows,
 } from "../hooks/use-api.js";
+import { useApp } from "../store.jsx";
 import { ErrorState } from "../components/ui/ErrorState.jsx";
 import { EmptyState } from "../components/ui/EmptyState.jsx";
 import { Skeleton } from "../components/ui/Skeleton.jsx";
@@ -14,8 +15,24 @@ export function WorkflowsPage(): JSX.Element {
   const { data, isLoading, isError, refetch } = useWorkflows();
   const accept = useAcceptWorkflow();
   const dismiss = useDismissWorkflow();
+  const startFlow = useStartFlow();
+  const { setActiveFlow } = useApp();
 
   const workflows = data ?? [];
+
+  const handleStartFlow = (workflowId: number) => {
+    startFlow.mutate(workflowId, {
+      onSuccess: () => {
+        // Fetch full active session with workflow data
+        fetch("http://127.0.0.1:8000/api/v1/flows/active")
+          .then((r) => r.json())
+          .then((data) => {
+            if (data) setActiveFlow(data);
+          })
+          .catch(() => {});
+      },
+    });
+  };
 
   return (
     <div className="p-6 space-y-4 max-w-4xl mx-auto">
@@ -58,6 +75,7 @@ export function WorkflowsPage(): JSX.Element {
             workflow={w}
             onAccept={(id) => accept.mutate(id)}
             onDismiss={(id) => dismiss.mutate(id)}
+            onStartFlow={handleStartFlow}
             delay={i * 0.05}
           />
         ))}

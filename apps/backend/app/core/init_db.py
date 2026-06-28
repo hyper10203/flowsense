@@ -7,6 +7,7 @@ from app.core.database import Base, engine
 from app.models import (  # noqa: F401
     Activity,
     DailyStat,
+    FlowSession,
     Setting,
     Suggestion,
     Workflow,

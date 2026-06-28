@@ -28,7 +28,7 @@ def summary(db: Session, *, start: datetime | None = None, end: datetime | None 
     total_duration_ms = db.execute(
         select(func.coalesce(func.sum(Activity.duration_ms), 0)).select_from(base_sub)
     ).scalar_one() or 0
-    productive_minutes = round(total_duration_ms / 60000, 1)
+    productive_minutes = round(total_duration_ms / 60000)
 
     # Count actual app switches = consecutive rows with different application.
     app_switches = _count_app_switches(db, base_sub)
@@ -47,7 +47,7 @@ def summary(db: Session, *, start: datetime | None = None, end: datetime | None 
         "idle_minutes": 0,
         "app_switches": app_switches,
         "most_used_apps": [
-            {"application": r.application, "minutes": round(r.total_ms / 60000, 1)}
+            {"application": r.application, "minutes": round(r.total_ms / 60000)}
             for r in app_rows
         ],
         "workflow_count": db.execute(select(func.count()).select_from(Workflow)).scalar_one() or 0,
@@ -133,8 +133,8 @@ def app_breakdown(db: Session, *, start: datetime | None = None, end: datetime |
     return [
         {
             "application": r.application,
-            "minutes": round((r.total_ms or 0) / 60000, 1),
-            "percentage": round(((r.total_ms or 0) / total_ms) * 100, 1) if total_ms > 0 else 0,
+            "minutes": round((r.total_ms or 0) / 60000),
+            "percentage": round(((r.total_ms or 0) / total_ms) * 100) if total_ms > 0 else 0,
         }
         for r in rows
     ]
@@ -160,7 +160,7 @@ def hourly_breakdown(db: Session, *, start: datetime | None = None, end: datetim
     return [
         {
             "hour": f"{int(r.hour):02d}:00",
-            "minutes": round((r.total_ms or 0) / 60000, 1),
+            "minutes": round((r.total_ms or 0) / 60000),
         }
         for r in rows
         if r.hour is not None
