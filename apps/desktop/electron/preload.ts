@@ -68,6 +68,37 @@ const flowSense = {
       }>,
     hide: () => ipcRenderer.invoke("app:hide"),
     openExternal: (url: string) => ipcRenderer.invoke("app:openExternal", url),
+    openApp: (appName: string) => ipcRenderer.invoke(IPC.APP_OPEN, appName) as Promise<boolean>,
+    overlayShow: (state: {
+      currentStep: number;
+      totalSteps: number;
+      appName: string;
+      workflowName: string;
+      isComplete: boolean;
+    }) => ipcRenderer.invoke(IPC.OVERLAY_SHOW, state) as Promise<void>,
+    overlayUpdate: (state: {
+      currentStep: number;
+      totalSteps: number;
+      appName: string;
+      workflowName: string;
+      isComplete: boolean;
+    }) => ipcRenderer.invoke(IPC.OVERLAY_UPDATE, state) as Promise<void>,
+    overlayHide: () => ipcRenderer.invoke(IPC.OVERLAY_HIDE) as Promise<void>,
+    onOverlayNext: (cb: Listener<string>) => {
+      const handler = (_e: unknown, payload: unknown) => cb(payload as string);
+      ipcRenderer.on("overlay:next", handler);
+      return () => ipcRenderer.removeListener("overlay:next", handler);
+    },
+    onOverlayComplete: (cb: Listener) => {
+      const handler = () => cb(undefined);
+      ipcRenderer.on("overlay:complete", handler);
+      return () => ipcRenderer.removeListener("overlay:complete", handler);
+    },
+    onOverlayClose: (cb: Listener) => {
+      const handler = () => cb(undefined);
+      ipcRenderer.on("overlay:close", handler);
+      return () => ipcRenderer.removeListener("overlay:close", handler);
+    },
     onLock: (cb: Listener) => {
       const handler = () => cb(undefined);
       ipcRenderer.on("system:locked", handler);

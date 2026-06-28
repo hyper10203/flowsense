@@ -1,4 +1,5 @@
 import { app, BrowserWindow, ipcMain, shell } from "electron";
+import { exec } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -6,6 +7,7 @@ import { ActivityMonitor } from "./activity-monitor.js";
 import { NotificationManager } from "./notification-manager.js";
 import { TrayManager } from "./tray-manager.js";
 import { IPC } from "./ipc-channels.js";
+import { showOverlay, updateOverlay, hideOverlay, type OverlayState } from "./overlay-window.js";
 import { DEFAULT_SETTINGS } from "@flowsense/shared";
 
 export interface IpcDependencies {
@@ -108,6 +110,53 @@ export function registerIpcHandlers(deps: IpcDependencies): void {
       return true;
     }
     return false;
+  });
+
+  // Open an app by name — tries common Windows paths, falls back to `start`
+  // Forward overlay control from renderer → overlay window
+  ipcMain.handle(IPC.OVERLAY_SHOW, (_e, state: OverlayState) => {
+    showOverlay(state);
+  });
+  ipcMain.handle(IPC.OVERLAY_UPDATE, (_e, state: OverlayState) => {
+    updateOverlay(state);
+  });
+  ipcMain.handle(IPC.OVERLAY_HIDE, () => {
+    hideOverlay();
+  });
+
+  ipcMain.handle(IPC.APP_OPEN, (_e, appName: string) => {
+    const platform = process.platform;
+    try {
+      if (platform === "win32") {
+        // Map friendly names to executable names
+        const appMap: Record<string, string> = {
+          edge: "msedge",
+          chrome: "chrome",
+          firefox: "firefox",
+          terminal: "wt",
+          "windows terminal": "wt",
+          "vs code": "code",
+          "visual studio code": "code",
+          explorer: "explorer",
+          "file explorer": "explorer",
+          discord: "discord",
+          slack: "slack",
+          spotify: "spotify",
+          notion: "notion",
+          figma: "figma",
+          cursor: "cursor",
+        };
+        const exe = appMap[appName.toLowerCase()] ?? appName;
+        exec(`start "" "${exe}"`, { timeout: 5000, windowsHide: true });
+      } else if (platform === "darwin") {
+        exec(`open -a "${appName}"`, { timeout: 5000 });
+      } else {
+        exec(`nohup "${appName}" &`, { timeout: 5000 });
+      }
+      return true;
+    } catch {
+      return false;
+    }
   });
 }
 

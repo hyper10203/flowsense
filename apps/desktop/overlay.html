@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FlowSense Flow Mode</title>
+<style>
+  :root {
+    --bg: rgba(18, 18, 24, 0.92);
+    --border: rgba(139, 92, 246, 0.2);
+    --fg: #f1f5f9;
+    --muted: #94a3b8;
+    --accent: #8b5cf6;
+    --accent-glow: rgba(139, 92, 246, 0.4);
+    --success: #22c55e;
+    --progress-bg: rgba(148, 163, 184, 0.15);
+    --radius: 14px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: transparent;
+    overflow: hidden;
+    -webkit-app-region: no-drag;
+    height: 56px;
+  }
+
+  .pill {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    background: var(--bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(139, 92, 246, 0.05);
+    height: 44px;
+    -webkit-app-region: drag;
+    user-select: none;
+    cursor: default;
+    transition: opacity 0.2s ease;
+  }
+
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent-glow);
+    animation: pulse 1.6s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+  .dot.complete {
+    background: var(--success);
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+    animation: none;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.85); }
+  }
+
+  .info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+  }
+  .step-count {
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+    line-height: 1;
+    margin-bottom: 2px;
+  }
+  .app-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--fg);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+  }
+  .app-name.complete {
+    color: var(--success);
+  }
+
+  .btn {
+    -webkit-app-region: no-drag;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 10px;
+    border-radius: 8px;
+    border: none;
+    background: rgba(139, 92, 246, 0.12);
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    flex-shrink: 0;
+    line-height: 1;
+    font-family: inherit;
+  }
+  .btn:hover { background: rgba(139, 92, 246, 0.22); }
+  .btn:active { background: rgba(139, 92, 246, 0.3); }
+  .btn.success {
+    background: rgba(34, 197, 94, 0.12);
+    color: var(--success);
+  }
+
+  .progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 2px;
+    background: var(--accent);
+    border-radius: 0 1px 1px 0;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 6px var(--accent-glow);
+  }
+
+  .close {
+    -webkit-app-region: no-drag;
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 2px;
+    line-height: 0;
+    flex-shrink: 0;
+    transition: color 0.15s ease;
+  }
+  .close:hover { color: var(--fg); }
+</style>
+</head>
+<body>
+  <div class="pill" id="pill">
+    <div class="progress" id="progress"></div>
+    <div class="dot" id="dot"></div>
+    <div class="info">
+      <div class="step-count" id="stepCount">Step 1/3</div>
+      <div class="app-name" id="appName">Edge</div>
+    </div>
+    <button class="btn" id="actionBtn">▶ Start</button>
+    <button class="close" id="closeBtn" aria-label="Close">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M1 1L9 9M9 1L1 9"/>
+      </svg>
+    </button>
+  </div>
+
+  <script>
+    const { ipcRenderer } = require("electron");
+
+    const pill = document.getElementById("pill");
+    const dot = document.getElementById("dot");
+    const stepCount = document.getElementById("stepCount");
+    const appName = document.getElementById("appName");
+    const actionBtn = document.getElementById("actionBtn");
+    const progress = document.getElementById("progress");
+    const closeBtn = document.getElementById("closeBtn");
+
+    let state = {
+      currentStep: 0,
+      totalSteps: 1,
+      appName: "",
+      workflowName: "",
+      isComplete: false,
+    };
+
+    ipcRenderer.on("overlay:state", (_e, next) => {
+      state = { ...state, ...next };
+      render();
+    });
+
+    actionBtn.addEventListener("click", () => {
+      if (state.isComplete) {
+        ipcRenderer.send("overlay:complete");
+      } else {
+        ipcRenderer.send("overlay:next", state.appName);
+      }
+    });
+
+    closeBtn.addEventListener("click", () => {
+      ipcRenderer.send("overlay:close");
+    });
+
+    function render() {
+      const { currentStep, totalSteps, appName: name, isComplete } = state;
+      stepCount.textContent = isComplete
+        ? "Flow Complete"
+        : `Step ${currentStep + 1}/${totalSteps}`;
+      appName.textContent = isComplete ? "✓ All done" : name;
+      appName.classList.toggle("complete", isComplete);
+      dot.classList.toggle("complete", isComplete);
+
+      const pct = totalSteps > 0 ? Math.min(100, (currentStep / totalSteps) * 100) : 0;
+      progress.style.width = `${Math.min(100, isComplete ? 100 : pct)}%`;
+
+      if (isComplete) {
+        actionBtn.textContent = "✓ Done";
+        actionBtn.classList.add("success");
+      } else if (currentStep === 0) {
+        actionBtn.textContent = "▶ Start";
+        actionBtn.classList.remove("success");
+      } else {
+        actionBtn.textContent = "▶ Next";
+        actionBtn.classList.remove("success");
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>

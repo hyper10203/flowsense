@@ -50,6 +50,7 @@ function FlowModeLayer(): JSX.Element | null {
         });
         setActiveFlow(null);
       }}
+      onStepUpdate={(steps) => setActiveFlow({ ...activeFlow, steps_completed: steps })}
     />
   );
 }

@@ -13,6 +13,10 @@ export const IPC = {
   SETTINGS_CHANGED: "settings:changed",
   WINDOW_BLUR: "window:blur",
   WINDOW_FOCUS: "window:focus",
+  APP_OPEN: "app:open",
+  OVERLAY_SHOW: "overlay:show",
+  OVERLAY_UPDATE: "overlay:update",
+  OVERLAY_HIDE: "overlay:hide",
 } as const;
 
 export type IpcChannel = (typeof IPC)[keyof typeof IPC];

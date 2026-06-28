@@ -159,6 +159,9 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
         createdAt: string;
       };
       setToasts((prev) => [...prev, p]);
+      setTimeout(() => {
+        setToasts((prev) => prev.filter((x) => x.id !== p.id));
+      }, 4500);
     });
     return () => {
       unsub();

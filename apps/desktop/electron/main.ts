@@ -7,6 +7,14 @@ import { registerIpcHandlers, type IpcDependencies } from "./ipc-handlers.js";
 import { NotificationManager } from "./notification-manager.js";
 import { TrayManager } from "./tray-manager.js";
 import { IPC } from "./ipc-channels.js";
+import {
+  createOverlayWindow,
+  showOverlay,
+  updateOverlay,
+  hideOverlay,
+  destroyOverlay,
+  type OverlayState,
+} from "./overlay-window.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -145,6 +153,17 @@ function setupIpc(): void {
     return monitor.active;
   });
   ipcMain.handle("app:hide", () => mainWindow?.hide());
+
+  // Messages from the overlay window (rendered in the transparent top window)
+  ipcMain.on("overlay:next", (_e, appName: string) => {
+    mainWindow?.webContents.send("overlay:next", appName);
+  });
+  ipcMain.on("overlay:complete", () => {
+    mainWindow?.webContents.send("overlay:complete");
+  });
+  ipcMain.on("overlay:close", () => {
+    mainWindow?.webContents.send("overlay:close");
+  });
 }
 
 app.whenReady().then(() => {

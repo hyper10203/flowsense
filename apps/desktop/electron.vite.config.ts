@@ -1,6 +1,7 @@
 import { resolve } from "path";
 import { defineConfig, externalizeDepsPlugin } from "electron-vite";
 import react from "@vitejs/plugin-react";
+import { copyFileSync } from "node:fs";
 
 export default defineConfig({
   main: {
@@ -48,7 +49,22 @@ export default defineConfig({
         "@shared": resolve(__dirname, "../../packages/shared/src"),
       },
     },
-    plugins: [react],
+    plugins: [
+      react(),
+      {
+        name: "copy-overlay-html",
+        writeBundle() {
+          try {
+            copyFileSync(
+              resolve(__dirname, "overlay.html"),
+              resolve(__dirname, "dist", "overlay.html")
+            );
+          } catch {
+            // not present in dev — dev server serves it directly
+          }
+        },
+      },
+    ],
     server: { port: 5173, strictPort: true },
   },
 });
