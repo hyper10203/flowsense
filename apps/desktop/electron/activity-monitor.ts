@@ -125,27 +125,25 @@ export class ActivityMonitor {
     const ps = existsSync("C:/Windows/System32/windowsPowerShell/v1.0/powershell.exe")
       ? "C:/Windows/System32/windowsPowerShell/v1.0/powershell.exe"
       : "powershell";
-    const script = `
-      Add-Type @"
-      using System;
-      using System.Runtime.InteropServices;
-      public class Win {
-        [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
-        [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
-        [DllImport("user32.dll")] public static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder lpString, int nMaxCount);
-      }
-      "@
-      $hwnd = [Win]::GetForegroundWindow()
-      $targetPid = 0
-      [Win]::GetWindowThreadProcessId($hwnd, [ref]$targetPid) | Out-Null
-      $sb = New-Object System.Text.StringBuilder 512
-      [Win]::GetWindowText($hwnd, $sb, 512) | Out-Null
-      $title = $sb.ToString()
-      $proc = Get-Process -Id $targetPid -ErrorAction SilentlyContinue
-      $name = if ($proc) { $proc.ProcessName } else { "Unknown" }
-      Write-Output "APP|$name"
-      Write-Output "TITLE|$title"
-    `;
+    const script = `Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public class Win {
+  [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+  [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+  [DllImport("user32.dll")] public static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder lpString, int nMaxCount);
+}
+"@
+$hwnd = [Win]::GetForegroundWindow()
+$targetPid = 0
+[Win]::GetWindowThreadProcessId($hwnd, [ref]$targetPid) | Out-Null
+$sb = New-Object System.Text.StringBuilder 512
+[Win]::GetWindowText($hwnd, $sb, 512) | Out-Null
+$title = $sb.ToString()
+$proc = Get-Process -Id $targetPid -ErrorAction SilentlyContinue
+$name = if ($proc) { $proc.ProcessName } else { "Unknown" }
+Write-Output "APP|$name"
+Write-Output "TITLE|$title"`;
     const out = execFileSync(ps, ["-NoProfile", "-Command", script], {
       encoding: "utf8",
       timeout: 4000,
