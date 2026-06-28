@@ -36,7 +36,7 @@ Chrome
 
 Seen 23 times this week.
 
-[✨ Create Workflow]
+[Create Workflow]
 ```
 
 No scripting. No programming. No cloud accounts. No setup.
