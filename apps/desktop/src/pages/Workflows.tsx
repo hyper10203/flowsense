@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Brain, Pencil, Sparkles, Workflow } from "lucide-react";
+import { Brain, Pencil, Sparkles } from "lucide-react";
 import {
   useAcceptSuggestion,
   useDismissSuggestion,
