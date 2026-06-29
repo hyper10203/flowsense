@@ -15,6 +15,7 @@ import {
   destroyOverlay,
   type OverlayState,
 } from "./overlay-window.js";
+import { startBackend, stopBackend } from "./backend-runner.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -41,10 +42,15 @@ function resolvePreloadPath(): string {
   return path.join(__dirname, "..", "preload", "preload.mjs");
 }
 
+function resolveAppIcon(): string {
+  const root = app.isPackaged ? app.getAppPath() : path.join(__dirname, "..", "..", "..");
+  return path.join(root, "public", "icon.png");
+}
+
 function createMainWindow(): void {
   mainWindow = new BrowserWindow({
     title: "FlowSense",
-    icon: path.join(__dirname, "..", "..", "public", "icon.png"), // ponytail: resolves from out/main/ up to asar root
+    icon: resolveAppIcon(),
     width: 1440,
     height: 900,
     minWidth: 1024,
@@ -174,6 +180,7 @@ app.whenReady().then(() => {
   setupIpc();
   tray.create();
   createMainWindow();
+  startBackend(mainWindow);
   // Auto-start tracking once the window is ready so activity data flows
   // without requiring the user to click the tray/button.
   mainWindow?.once("ready-to-show", () => {
@@ -192,6 +199,7 @@ app.on("before-quit", () => {
   isQuitting = true;
   monitor.stop();
   tray.destroy();
+  stopBackend();
 });
 
 app.on("activate", () => {
