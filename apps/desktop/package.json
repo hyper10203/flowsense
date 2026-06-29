@@ -1,6 +1,6 @@
 {
   "name": "flowsense-desktop",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "author": "Subham",
   "description": "FlowSense — AI-powered desktop focus companion",
@@ -48,7 +48,19 @@
     "files": [
       "dist/**/*",
       "out/**/*",
-      "public/icon.png"
+      "public/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../../backend",
+        "to": "backend",
+        "filter": ["!**/__pycache__/**", "!**/.pytest_cache/**", "!**/.ruff_cache/**", "!**/tests/**", "!**/.env", "!**/data/**"]
+      },
+      {
+        "from": "../../vendor/python",
+        "to": "vendor/python",
+        "filter": ["!**/__pycache__/**"]
+      }
     ],
     "win": {
       "target": [
@@ -57,6 +69,7 @@
           "arch": ["x64"]
         }
       ],
+      "icon": "public/icon.ico",
       "signAndEditExecutable": false
     },
     "nsis": {

@@ -20,7 +20,7 @@ def list_workflows(db: Session = Depends(get_db)):
         {
             "id": w.id,
             "hash": w.hash,
-            "name": w.ai_name,
+            "ai_name": w.ai_name,
             "description": w.description,
             "purpose": w.purpose,
             "automation_suggestion": w.automation_suggestion,
@@ -28,6 +28,15 @@ def list_workflows(db: Session = Depends(get_db)):
             "confidence": w.confidence,
             "first_seen": w.first_seen.isoformat() if w.first_seen else None,
             "last_seen": w.last_seen.isoformat() if w.last_seen else None,
+            "steps": [
+                {
+                    "step_order": s.step_order,
+                    "application": s.application,
+                    "window_title": s.window_title,
+                    "url_pattern": s.url_pattern,
+                }
+                for s in sorted(w.steps, key=lambda x: x.step_order)
+            ],
         }
         for w in workflows
     ]
