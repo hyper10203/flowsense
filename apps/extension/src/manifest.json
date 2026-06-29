@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "FlowSense",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Companion extension for FlowSense desktop activity tracking. Sends active tab metadata to your local FlowSense backend.",
   "permissions": ["tabs", "activeTab"],
   "host_permissions": ["http://127.0.0.1/*"],
