@@ -3,9 +3,8 @@ import { useApp } from "./store.jsx";
 import { useActiveFlow, useStopFlow } from "./hooks/use-api.js";
 import { AppShell } from "./components/layout/AppShell.jsx";
 import { ToastViewport } from "./components/ui/Toast.jsx";
-import { ErrorBoundary } from "./components/ui/ErrorBoundary.jsx";
 import { FlowOverlay } from "./components/flow/FlowOverlay.jsx";
-import { SetupWizard } from "./components/onboarding/SetupWizard.jsx";
+import { InstallerPrompts } from "./components/onboarding/InstallerPrompts.jsx";
 import { DashboardPage } from "./pages/Dashboard.jsx";
 import { TimelinePage } from "./pages/Timeline.jsx";
 import { WorkflowsPage } from "./pages/Workflows.jsx";
@@ -57,8 +56,8 @@ function FlowModeLayer(): JSX.Element | null {
 export function App(): JSX.Element {
   const { setRoute, setActiveFlow, activeFlow } = useApp();
   const stopFlow = useStopFlow();
-  const [showSetup, setShowSetup] = useState(
-    () => localStorage.getItem("flowsense:setupSeen") !== "1"
+  const [showInstaller, setShowInstaller] = useState(
+    () => localStorage.getItem("flowsense:installerSeen") !== "1"
   );
 
   const handleToggleFlow = useCallback(() => {
@@ -76,17 +75,15 @@ export function App(): JSX.Element {
   return (
     <div className="h-screen w-screen overflow-hidden bg-bg text-fg">
       <AppShell onToggleFlow={handleToggleFlow}>
-        <ErrorBoundary fallbackLabel="Page crashed">
-          <ActivePage />
-        </ErrorBoundary>
+        <ActivePage />
       </AppShell>
       <FlowModeLayer />
       <ToastViewport />
-      <SetupWizard
-        open={showSetup}
+      <InstallerPrompts
+        open={showInstaller}
         onClose={() => {
-          localStorage.setItem("flowsense:setupSeen", "1");
-          setShowSetup(false);
+          localStorage.setItem("flowsense:installerSeen", "1");
+          setShowInstaller(false);
         }}
       />
     </div>

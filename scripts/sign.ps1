@@ -6,7 +6,7 @@ $signtool = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.18362.0\x64\signtoo
 $certSubject = "CN=FlowSense"
 $pfxPath = "$env:TEMP\FlowSense-CS.pfx"
 $pfxPassword = "fs2026"
-$installer = "apps\desktop\dist\FlowSense Setup 1.0.0.exe"
+$installer = "apps\desktop\dist\FlowSense Setup 0.1.0.exe"
 $exe = "apps\desktop\dist\win-unpacked\FlowSense.exe"
 
 # 1. Create cert if not exists

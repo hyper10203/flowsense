@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     app_name: str = "FlowSense"
-    app_version: str = "1.0.0"
+    app_version: str = "0.1.0"
     host: str = "127.0.0.1"
     port: int = 8000
     database_url: str = "sqlite:///./data/flowsense.db"
