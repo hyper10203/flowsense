@@ -7,6 +7,12 @@ export interface ApiProviderConfig {
   enabled: boolean;
 }
 
+export interface FlowShortcut {
+  workflow_id: number;
+  accelerator: string;
+  label: string;
+}
+
 export interface Settings {
   polling_interval: number;
   dark_mode: boolean;
@@ -21,6 +27,7 @@ export interface Settings {
   ai_model: string;
   terminal_tracking: boolean;
   browser_url_tracking: boolean;
+  flow_shortcuts: FlowShortcut[];
 }
 
 export type SettingsKey = keyof Settings;
@@ -51,4 +58,5 @@ export const DEFAULT_SETTINGS: Settings = {
   ai_model: "gemini-2.0-flash",
   terminal_tracking: true,
   browser_url_tracking: true,
+  flow_shortcuts: [],
 };

@@ -1,4 +1,5 @@
 import { app, BrowserWindow, ipcMain, powerMonitor } from "electron";
+import type { FlowShortcut } from "@flowsense/shared";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import ElectronStore from "electron-store";
@@ -16,6 +17,7 @@ import {
   type OverlayState,
 } from "./overlay-window.js";
 import { startBackend, stopBackend } from "./backend-runner.js";
+import { rebuildGlobalShortcuts } from "./global-shortcut.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -180,7 +182,14 @@ app.whenReady().then(() => {
   setupIpc();
   tray.create();
   createMainWindow();
-  startBackend(mainWindow);
+  if (mainWindow) startBackend({ window: mainWindow });
+  // Register persisted flow shortcuts
+  try {
+    const stored = store.get("flow_shortcuts") as unknown;
+    if (Array.isArray(stored)) rebuildGlobalShortcuts(stored, mainWindow!);
+  } catch {
+    // ignore
+  }
   // Auto-start tracking once the window is ready so activity data flows
   // without requiring the user to click the tray/button.
   mainWindow?.once("ready-to-show", () => {
@@ -189,6 +198,7 @@ app.whenReady().then(() => {
     mainWindow?.webContents.send(IPC.MONITORING_STATE_CHANGED, true);
   });
 });
+
 
 app.on("window-all-closed", () => {
   // Stay alive in tray on Windows/Linux

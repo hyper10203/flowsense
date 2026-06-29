@@ -53,6 +53,7 @@ export function startBackend(opts: BackendOptions = {}): void {
   let python: string;
   let args: string[];
   let cwd: string;
+  let pythonDir = "";
 
   if (opts.preferExternal || !bundled) {
     python = uvBinary();
@@ -61,7 +62,17 @@ export function startBackend(opts: BackendOptions = {}): void {
   } else {
     python = bundled;
     cwd = root;
-    args = [scriptPath];
+    // Use -m so Python adds cwd to sys.path and can find the `app` package.
+    args = ["-m", "app.main"];
+    // Embeddable Python's python3xx._pth overrides PYTHONPATH. Remove it so our env works.
+    pythonDir = path.dirname(python);
+    try {
+      for (const f of fs.readdirSync(pythonDir)) {
+        if (f.endsWith("._pth")) fs.unlinkSync(path.join(pythonDir, f));
+      }
+    } catch {
+      // ignore
+    }
   }
 
   const isBundled = !!bundled && !opts.preferExternal;
@@ -73,8 +84,13 @@ export function startBackend(opts: BackendOptions = {}): void {
       PYTHONUNBUFFERED: "1",
       ...(isBundled
         ? {
-            PYTHONHOME: path.dirname(python),
-            PYTHONPATH: [root, path.join(root, "app")].join(path.delimiter),
+            PYTHONPATH: [
+              root,
+              path.join(root, "app"),
+              path.join(pythonDir, "Lib", "site-packages"),
+              pythonDir,
+              path.join(pythonDir, "python313.zip"),
+            ].join(path.delimiter),
           }
         : {}),
     },

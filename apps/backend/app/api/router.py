@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from app.api.routes import (
     activity,
+    ai,
     analytics,
     detect,
     extension,
@@ -14,6 +15,7 @@ from app.api.routes import (
 
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(activity.router)
+api_router.include_router(ai.router)
 api_router.include_router(workflow.router)
 api_router.include_router(suggestion.router)
 api_router.include_router(analytics.router)

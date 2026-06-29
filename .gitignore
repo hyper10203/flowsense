@@ -24,3 +24,7 @@ backend/data/
 claude/
 *.egg-info/
 DEVLOG.md
+vendor/
+apps/desktop/release/
+tmp-*.py
+tmp-*.ps1

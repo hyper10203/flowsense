@@ -229,6 +229,10 @@ FlowSense uses AI in one narrow, optional role: **naming and summarizing detecte
 - **Control:** AI is fully optional. Set your API key in Settings → AI features or via env vars to enable it; without it, FlowSense still tracks, detects, and reports — just with auto-generated names.
 - **No telemetry, no tracking, no cloud accounts.** The only outbound call is the one you explicitly configure.
 
+### Development Tools
+
+This app was built using **Claude Code CLI** for code completion and **Stitch** for UI design. All logic, architecture, and shipping decisions were made by the project maintainer; the tools above assisted in implementation speed and visual design.
+
 ---
 
 ## Roadmap

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   useMutation,
   useQuery,
@@ -23,6 +23,7 @@ import type {
   Workflow,
 } from "@flowsense/shared";
 import { ipc } from "../lib/ipc.js";
+import { useApp } from "../store.jsx";
 
 export function useBackendReachable(): boolean {
   const { data } = useQuery({
@@ -89,6 +90,42 @@ export function useWorkflows() {
     queryFn: api.workflows.list,
     refetchInterval: 30_000,
   });
+}
+
+const AI_ERROR_MESSAGES: Record<string, { title: string; body: string }> = {
+  rate_limit: {
+    title: "AI rate limit reached",
+    body: "Workflow naming paused — try again in a minute.",
+  },
+  key_invalid: {
+    title: "AI API key rejected",
+    body: "Check your key in Settings → AI.",
+  },
+  token_exhausted: {
+    title: "AI token budget exhausted",
+    body: "Top up or switch provider in Settings → AI.",
+  },
+};
+
+export function useAiErrorToasts() {
+  const workflows = useWorkflows();
+  const { pushToast } = useApp();
+  const seen = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!workflows.data) return;
+    for (const wf of workflows.data) {
+      const desc = wf.description ?? "";
+      const match = desc.match(/^ai_error:(\w+)/);
+      if (!match) continue;
+      const kind = match[1];
+      const key = `${wf.id}:${kind}`;
+      if (seen.current.has(key)) continue;
+      seen.current.add(key);
+      const msg = AI_ERROR_MESSAGES[kind];
+      if (msg) pushToast({ title: msg.title, body: msg.body, silent: false });
+    }
+  }, [workflows.data, pushToast]);
 }
 
 export function useSuggestions() {

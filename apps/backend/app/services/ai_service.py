@@ -80,24 +80,43 @@ PROVIDERS = {
 
 
 def _get_runtime_api_key() -> tuple[str, str, str]:
-    """Read provider + key + model from env vars (backend reads from its own DB via the /settings endpoint,
-    but for the AI naming service we use env vars for simplicity, since the backend is a separate process)."""
-    provider = os.environ.get("AI_PROVIDER", "gemini")
-    api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("OPENROUTER_API_KEY") or os.environ.get("NVIDIA_NIM_API_KEY") or os.environ.get("DEEPSEEK_API_KEY") or os.environ.get("AI_API_KEY") or ""
-    model = os.environ.get("AI_MODEL", "")
+    """Read provider + key + model. Priority: env vars (set by installer .env) > pydantic-settings."""
+    provider = os.environ.get("AI_PROVIDER", settings.ai_provider)
+    api_key = (
+        os.environ.get("GEMINI_API_KEY")
+        or os.environ.get("OPENROUTER_API_KEY")
+        or os.environ.get("NVIDIA_NIM_API_KEY")
+        or os.environ.get("DEEPSEEK_API_KEY")
+        or os.environ.get("AI_API_KEY")
+        or settings.gemini_api_key
+        or settings.openrouter_api_key
+        or settings.nvidia_nim_api_key
+        or settings.deepseek_api_key
+        or settings.ai_api_key
+        or ""
+    )
+    model = os.environ.get("AI_MODEL", settings.gemini_model)
     return provider, api_key, model
 
 
-async def _call_ai(prompt: str) -> str | None:
+class AIError(Exception):
+    """Raised when an AI call fails with a user-actionable error."""
+    rate_limit = "rate_limit"
+    key_invalid = "key_invalid"
+    token_exhausted = "token_exhausted"
+    generic = "generic"
+
+    def __init__(self, kind: str, message: str = ""):
+        self.kind = kind
+        super().__init__(message)
+
+
+async def _call_ai(prompt: str) -> str:
+    """Returns raw AI text, or raises AIError on failure."""
     provider_name, api_key, model = _get_runtime_api_key()
 
-    # Fallback to env if no key in store
     if not api_key:
-        api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("OPENROUTER_API_KEY") or os.environ.get("NVIDIA_NIM_API_KEY") or os.environ.get("DEEPSEEK_API_KEY") or ""
-    if not api_key:
-        logger.warning("No AI API key configured; skipping AI call.")
-        return None
-
+        raise AIError(AIError.key_invalid, "No AI API key configured")
     provider = PROVIDERS.get(provider_name) or PROVIDERS["gemini"]
     if not model:
         model = "gemini-2.0-flash" if provider_name == "gemini" else "google/gemini-2.0-flash-001:free"
@@ -116,12 +135,22 @@ async def _call_ai(prompt: str) -> str | None:
     try:
         async with httpx.AsyncClient(timeout=settings.gemini_timeout_seconds) as client:
             response = await client.post(url, headers=headers, params=params, json=body)
+            if response.status_code == 429:
+                raise AIError(AIError.rate_limit, "Rate limited")
+            if response.status_code in (401, 403):
+                # 401/403 often means invalid key or exhausted quota
+                text = response.text.lower()
+                if "quota" in text or "billing" in text or "insufficient" in text or "exhausted" in text:
+                    raise AIError(AIError.token_exhausted, "Token budget exhausted")
+                raise AIError(AIError.key_invalid, "API key rejected")
             response.raise_for_status()
             data = response.json()
             return provider["extract"](data)
+    except AIError:
+        raise
     except Exception as exc:
         logger.error("AI call failed (provider=%s): %s", provider_name, exc)
-        return None
+        raise AIError(AIError.generic, str(exc))
 
 
 def _parse_json(text: str) -> dict[str, Any] | None:
@@ -139,17 +168,21 @@ def _parse_json(text: str) -> dict[str, Any] | None:
         return None
 
 
-async def name_workflow(steps: list[str], frequency: int, confidence: float) -> dict[str, str] | None:
+async def name_workflow(steps: list[str], frequency: int, confidence: float) -> dict[str, Any] | None:
+    """Returns {name, description, suggestion} on success, or {error: "...", message: "..."} on failure."""
     prompt = (
         f"{WORKFLOW_NAMING_PROMPT}\n\n"
         f"Detected workflow: {' → '.join(steps)}\n"
         f"Frequency: {frequency}\n"
         f"Confidence: {confidence}\n"
     )
-    for attempt in range(2):
-        raw = await _call_ai(prompt)
-        parsed = _parse_json(raw)
-        if parsed is not None:
-            return parsed
-        logger.warning("AI returned invalid JSON (attempt %d)", attempt + 1)
-    return None
+    try:
+        for attempt in range(2):
+            raw = await _call_ai(prompt)
+            parsed = _parse_json(raw)
+            if parsed is not None:
+                return parsed
+            logger.warning("AI returned invalid JSON (attempt %d)", attempt + 1)
+        return None
+    except AIError as exc:
+        return {"error": exc.kind, "message": str(exc)}

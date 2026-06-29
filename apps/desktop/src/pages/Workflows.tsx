@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Brain, Pencil, Sparkles } from "lucide-react";
+import { Brain, Pencil, Sparkles, Workflow } from "lucide-react";
 import {
   useAcceptSuggestion,
+  useAiErrorToasts,
   useDismissSuggestion,
   useRenameWorkflow,
   useStartFlow,
@@ -13,7 +14,7 @@ import { ErrorState } from "../components/ui/ErrorState.jsx";
 import { EmptyState } from "../components/ui/EmptyState.jsx";
 import { Skeleton } from "../components/ui/Skeleton.jsx";
 import { WorkflowCard } from "../components/workflows/WorkflowCard.jsx";
-import type { Workflow } from "@flowsense/shared";
+import type { Workflow as WorkflowType } from "@flowsense/shared";
 
 type Tab = "workflows" | "suggestions";
 
@@ -26,6 +27,7 @@ export function WorkflowsPage(): JSX.Element {
   const dismissSuggestion = useDismissSuggestion();
   const startFlow = useStartFlow();
   const { setActiveFlow } = useApp();
+  useAiErrorToasts();
 
   const handleStartFlow = (workflowId: number) => {
     startFlow.mutate(workflowId, {
@@ -40,7 +42,7 @@ export function WorkflowsPage(): JSX.Element {
     });
   };
 
-  const handleRename = (wf: Workflow, newName: string) => {
+  const handleRename = (wf: WorkflowType, newName: string) => {
     rename.mutate({ id: wf.id, name: newName });
   };
 
@@ -157,7 +159,7 @@ export function WorkflowsPage(): JSX.Element {
                   AI suggestion
                 </div>
                 <div className="text-sm font-semibold text-fg">
-                  {s.workflow.name ?? "Untitled"}
+                  {s.workflow.ai_name ?? "Untitled"}
                 </div>
                 {s.workflow.description && (
                   <p className="text-xs text-fg-subtle">{s.workflow.description}</p>

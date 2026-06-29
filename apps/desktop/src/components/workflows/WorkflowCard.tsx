@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, ChevronDown, Pencil, Play, Sparkles, X } from "lucide-react";
-import type { Workflow } from "@flowsense/shared";
+import { Check, ChevronDown, Keyboard, Pencil, Play, Sparkles, X } from "lucide-react";
+import type { FlowShortcut, Workflow } from "@flowsense/shared";
 import { Card, CardContent } from "../ui/Card.jsx";
 import { Button } from "../ui/Button.jsx";
 import { ConfidenceBadge } from "./ConfidenceBadge.jsx";
 import { WorkflowSteps } from "./WorkflowSteps.jsx";
+import { FlowShortcutDialog } from "./FlowShortcutDialog.jsx";
 import { formatDate } from "../../lib/utils.js";
+import { useFlowShortcuts } from "../../hooks/use-flow-shortcuts.js";
 
 interface WorkflowCardProps {
   workflow: Workflow;
@@ -29,6 +31,12 @@ export function WorkflowCard({
   const [status, setStatus] = useState<"pending" | "accepted" | "dismissed">("pending");
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState("");
+  const [shortcutOpen, setShortcutOpen] = useState(false);
+  const { shortcuts, setShortcuts } = useFlowShortcuts();
+
+  const existing: FlowShortcut | undefined = shortcuts.find(
+    (s) => s.workflow_id === workflow.id,
+  );
 
   const startEdit = () => {
     setDraftName(workflow.ai_name ?? "");
@@ -155,7 +163,7 @@ export function WorkflowCard({
                 size="sm"
                 onClick={() => {
                   setStatus("dismissed");
-                  onDismiss(workflow.id);
+                  onDismiss?.(workflow.id);
                 }}
               >
                 <X size={14} /> Dismiss
@@ -165,7 +173,7 @@ export function WorkflowCard({
                 size="sm"
                 onClick={() => {
                   setStatus("accepted");
-                  onAccept(workflow.id);
+                  onAccept?.(workflow.id);
                 }}
               >
                 <Check size={14} /> Accept
@@ -174,7 +182,19 @@ export function WorkflowCard({
           ) : status === "accepted" && onStartFlow ? (
             <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border-subtle">
               <span className="text-xs text-success font-medium">Saved</span>
+              {existing && (
+                <span className="text-[10px] font-mono text-fg-subtle bg-bg-subtle rounded px-1.5 py-0.5">
+                  {existing.accelerator}
+                </span>
+              )}
               <div className="flex-1" />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShortcutOpen(true)}
+              >
+                <Keyboard size={14} /> Shortcut
+              </Button>
               <Button
                 variant="primary"
                 size="sm"
@@ -182,6 +202,21 @@ export function WorkflowCard({
               >
                 <Play size={14} /> Start Flow
               </Button>
+              <FlowShortcutDialog
+                open={shortcutOpen}
+                onClose={() => setShortcutOpen(false)}
+                initial={existing?.accelerator}
+                onSave={(accel) => {
+                  const next = shortcuts.filter((s) => s.workflow_id !== workflow.id);
+                  next.push({
+                    workflow_id: workflow.id,
+                    accelerator: accel,
+                    label: workflow.ai_name ?? `Workflow #${workflow.id}`,
+                  });
+                  setShortcuts(next);
+                  setShortcutOpen(false);
+                }}
+              />
             </div>
           ) : (
             <div

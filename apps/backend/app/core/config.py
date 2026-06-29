@@ -19,6 +19,12 @@ class Settings(BaseSettings):
     gemini_max_tokens: int = 300
     gemini_timeout_seconds: int = 15
 
+    ai_provider: str = "gemini"
+    ai_api_key: str | None = None
+    openrouter_api_key: str | None = None
+    nvidia_nim_api_key: str | None = None
+    deepseek_api_key: str | None = None
+
     workflow_min_confidence: float = 0.3
     workflow_min_frequency: int = 2
     workflow_min_steps: int = 2

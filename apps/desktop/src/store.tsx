@@ -78,6 +78,14 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
     document.documentElement.classList.toggle("dark", stored === "dark");
   }, []);
 
+  // Keep <html class="dark"> in sync with the dark_mode setting (Settings page toggle).
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", settings.dark_mode);
+    if (settings.dark_mode !== (theme === "dark")) {
+      setTheme(settings.dark_mode ? "dark" : "light");
+    }
+  }, [settings.dark_mode]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     const handler = (
       payload: { key: string; value: unknown }

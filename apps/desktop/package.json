@@ -57,7 +57,7 @@
         "filter": ["!**/__pycache__/**", "!**/.pytest_cache/**", "!**/.ruff_cache/**", "!**/tests/**", "!**/.env", "!**/data/**"]
       },
       {
-        "from": "../vendor/python",
+        "from": "../../vendor/python",
         "to": "vendor/python",
         "filter": ["!**/__pycache__/**"]
       }

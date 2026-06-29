@@ -7,8 +7,19 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.config import settings
 from app.models.activity import Activity
 from app.services import activity_service
+
+
+def _ai_key_configured() -> bool:
+    return bool(
+        settings.gemini_api_key
+        or settings.openrouter_api_key
+        or settings.nvidia_nim_api_key
+        or settings.deepseek_api_key
+        or settings.ai_api_key
+    )
 
 router = APIRouter(prefix="/activity", tags=["activity"])
 
@@ -44,7 +55,6 @@ def _maybe_run_detection(db: Session) -> None:
         from app.services import workflow_service
         from app.services.ai_service import name_workflow
         from app.services.suggestion_service import create_suggestion_for_workflow
-        from app.core.config import settings as app_settings
 
         events = db.query(Activity).order_by(Activity.timestamp.asc()).limit(5000).all()
         normalized = [
@@ -66,24 +76,30 @@ def _maybe_run_detection(db: Session) -> None:
         for det in detected:
             wf = workflow_service.save_detected_workflow(db, det)
 
-            # AI naming if not yet named and Gemini is configured
-            if wf.ai_name is None and app_settings.gemini_api_key:
+            # AI naming if not yet named and any AI key is configured
+            if wf.ai_name is None and _ai_key_configured():
                 import asyncio
                 try:
                     result = asyncio.run(
                         name_workflow(det.steps, det.frequency, det.confidence)
                     )
-                    if result:
+                    if result and "error" not in result:
                         wf.ai_name = result.get("name")
                         wf.description = result.get("description")
                         wf.automation_suggestion = result.get("suggestion")
+                    elif result and "error" in result:
+                        # Surface error to frontend via workflow row
+                        wf.description = f"ai_error:{result['error']}"
                 except Exception:
                     pass
 
             # Fallback: generate a name from steps if AI didn't provide one
             if wf.ai_name is None:
                 step_names = " → ".join(det.steps)
-                wf.ai_name = step_names if len(step_names) <= 100 else step_names[:97] + "..."
+                if step_names and len(step_names) > 0:
+                    wf.ai_name = step_names if len(step_names) <= 100 else step_names[:97] + "..."
+                else:
+                    wf.ai_name = f"Workflow #{wf.id}"
                 wf.description = f"You switch between {', '.join(det.steps)} {det.frequency} times."
 
             # Auto-create suggestion for detected workflows
