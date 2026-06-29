@@ -34,7 +34,7 @@ const tray = new TrayManager({
 
 function resolveRendererPath(): string {
   if (isDev) return "http://localhost:5173";
-  return path.join(__dirname, "..", "dist", "index.html");
+  return path.join(__dirname, "..", "..", "dist", "index.html");
 }
 
 function resolvePreloadPath(): string {
@@ -44,7 +44,7 @@ function resolvePreloadPath(): string {
 function createMainWindow(): void {
   mainWindow = new BrowserWindow({
     title: "FlowSense",
-    icon: path.join(__dirname, "..", "public", "icon.png"),
+    icon: path.join(__dirname, "..", "..", "public", "icon.png"), // ponytail: resolves from out/main/ up to asar root
     width: 1440,
     height: 900,
     minWidth: 1024,

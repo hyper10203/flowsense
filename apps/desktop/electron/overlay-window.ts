@@ -18,7 +18,7 @@ let overlay: BrowserWindow | null = null;
 
 function resolveOverlayPath(): string {
   if (isDev) return "http://localhost:5173/overlay.html";
-  return path.join(__dirname, "..", "dist", "overlay.html");
+  return path.join(__dirname, "..", "..", "dist", "overlay.html");
 }
 
 function positionOverlay(): void {

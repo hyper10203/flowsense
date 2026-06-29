@@ -43,11 +43,12 @@
     "appId": "com.flowsense.desktop",
     "productName": "FlowSense",
     "directories": {
-      "output": "dist"
+      "output": "release"
     },
     "files": [
       "dist/**/*",
-      "out/**/*"
+      "out/**/*",
+      "public/icon.png"
     ],
     "win": {
       "target": [
@@ -66,6 +67,7 @@
       "createStartMenuShortcut": true,
       "menuCategory": "FlowSense",
       "runAfterFinish": true,
+      "deleteAppDataOnUninstall": true,
       "warningsAsErrors": false
     },
     "mac": {
