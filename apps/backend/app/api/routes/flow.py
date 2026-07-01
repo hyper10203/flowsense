@@ -19,6 +19,7 @@ class StopFlowRequest(BaseModel):
 @router.post("/start")
 def start_flow(body: StartFlowRequest, db: Session = Depends(get_db)):
     session = flow_session_service.start_session(db, body.workflow_id)
+    wf = session.workflow
     db.commit()
     return {
         "id": session.id,
@@ -26,6 +27,13 @@ def start_flow(body: StartFlowRequest, db: Session = Depends(get_db)):
         "status": session.status,
         "steps_completed": session.steps_completed,
         "started_at": session.started_at.isoformat(),
+        "overlay_state": {
+            "currentStep": session.steps_completed,
+            "totalSteps": len(wf.steps) if wf else 0,
+            "appName": wf.steps[0].application if wf and wf.steps else "Unknown",
+            "workflowName": wf.ai_name if wf else "Unknown",
+            "isComplete": False,
+        }
     }
 
 

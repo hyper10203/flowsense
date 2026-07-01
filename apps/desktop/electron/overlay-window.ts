@@ -23,12 +23,12 @@ function resolveOverlayPath(): string {
 
 function positionOverlay(): void {
   if (!overlay || overlay.isDestroyed()) return;
-  const { width } = screen.getPrimaryDisplay().workAreaSize;
+  const { width } = screen.getPrimaryDisplay().bounds;
   overlay.setBounds({
     width: 340,
     height: 52,
     x: Math.floor((width - 340) / 2),
-    y: 16,
+    y: 0,
   });
 }
 
@@ -53,7 +53,7 @@ export function createOverlayWindow(): BrowserWindow {
     thickFrame: false,
     webPreferences: {
       contextIsolation: false,
-      nodeIntegration: false,
+      nodeIntegration: true,
       sandbox: false,
       backgroundThrottling: false,
     },

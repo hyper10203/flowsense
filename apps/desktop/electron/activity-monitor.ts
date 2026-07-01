@@ -38,6 +38,9 @@ const TERMINAL_APPS = new Set([
   "cmder",
 ]);
 
+// Apps we never track — FlowSense tracking itself is a feedback loop.
+const EXCLUDED_APPS = new Set(["flowsense", "flowsense.exe"]);
+
 const URL_REGEX = /https?:\/\/[^\s]+/i;
 const BROWSERS = new Set([
   "chrome",
@@ -100,35 +103,47 @@ export class ActivityMonitor {
   }
 
   private async tick(): Promise<void> {
-    if (!this.isRunning || this.isPaused || !this.mainWindow) return;
-    try {
-      const info = this.getActiveWindow();
-      if (!info) return;
-      const now = Date.now();
-      const duration = now - this.lastTimestamp;
-      const sameWindow =
-        info.application === this.lastApplication &&
-        info.windowTitle === this.lastWindow;
-      if (sameWindow) return;
-      this.lastWindow = info.windowTitle;
-      this.lastApplication = info.application;
-      this.lastTimestamp = now;
-      const isTerminal = TERMINAL_APPS.has(info.application.toLowerCase());
-      const payload: ActivityPayload = {
-        timestamp: new Date().toISOString(),
-        application: info.application,
-        window_title: info.windowTitle,
-        url: info.url,
-        command_line: info.commandLine,
-        event_type: isTerminal ? "terminal" : info.url ? "browser_tab" : "window_focus",
-        duration_ms: duration,
-        session_id: this.sessionId,
-      };
-      this.mainWindow.webContents.send(IPC.ACTIVITY_TRACKED, payload);
-    } catch (err) {
-      console.error("[ActivityMonitor] tick failed:", err);
+  if (!this.isRunning || this.isPaused || !this.mainWindow) return;
+  try {
+    const info = this.getActiveWindow();
+    if (!info) return;
+    if (EXCLUDED_APPS.has(info.application.toLowerCase())) {
+      // Still advance the timestamp so next tick measures from now,
+      // but don't record anything.
+      this.lastTimestamp = Date.now();
+      return;
     }
+    const now = Date.now();
+    // ponytail: cap at 30min so stepping away from desk for 8h
+    // doesn't log a single 28800-minute "Chrome" event.
+    // 30min (1_800_000ms) covers any real single-window session.
+    const MAX_SESSION_MS = 30 * 60 * 1000;
+    const rawDuration = now - this.lastTimestamp;
+    const duration = Math.min(rawDuration, MAX_SESSION_MS);
+    const sameWindow =
+      info.application === this.lastApplication &&
+      info.windowTitle === this.lastWindow;
+    // Always advance the timestamp so the next tick measures from now.
+    this.lastTimestamp = now;
+    if (sameWindow) return;
+    this.lastWindow = info.windowTitle;
+    this.lastApplication = info.application;
+    const isTerminal = TERMINAL_APPS.has(info.application.toLowerCase());
+    const payload: ActivityPayload = {
+      timestamp: new Date().toISOString(),
+      application: info.application,
+      window_title: info.windowTitle,
+      url: info.url,
+      command_line: info.commandLine,
+      event_type: isTerminal ? "terminal" : info.url ? "browser_tab" : "window_focus",
+      duration_ms: duration,
+      session_id: this.sessionId,
+    };
+    this.mainWindow.webContents.send(IPC.ACTIVITY_TRACKED, payload);
+  } catch (err) {
+    console.error("[ActivityMonitor] tick failed:", err);
   }
+}
 
   private getActiveWindow(): ActiveWindowInfo | null {
     const os = platform();
@@ -275,12 +290,7 @@ Write-Output "CMD|$cmdLine"`;
     return null;
   }
 
-  private fallbackWindow(): ActiveWindowInfo {
-    return {
-      application: "FlowSense",
-      windowTitle: "FlowSense",
-      url: null,
-      commandLine: null,
-    };
+  private fallbackWindow(): ActiveWindowInfo | null {
+    return null;
   }
 }

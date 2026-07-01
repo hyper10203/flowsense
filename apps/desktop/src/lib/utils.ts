@@ -16,10 +16,10 @@ export function formatDuration(ms: number): string {
 }
 
 export function formatMinutes(mins: number): string {
-  if (mins < 60) return `${mins}m`;
+  if (mins < 60) return `${Math.round(mins)}m`;
   const h = Math.floor(mins / 60);
   const m = mins % 60;
-  return m === 0 ? `${h}h` : `${h}h ${m}m`;
+  return m === 0 ? `${h}h` : `${h}h ${Math.round(m)}m`;
 }
 
 export function formatTime(iso: string): string {

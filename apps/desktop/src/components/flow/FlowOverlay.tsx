@@ -80,16 +80,58 @@ export function FlowOverlay({ session, onClose, onStepUpdate }: FlowOverlayProps
     };
   }, [session.id, currentStep, stopFlow, onClose]);
 
-  // Auto-advance when user switches to the expected app
+  // Track active apps to prevent advancing on app close
+  const activeWindows = useRef<Map<string, boolean>>(new Map());
+
+  useEffect(() => {
+    if (!events || events.length === 0) return;
+
+    // Track when an app becomes active
+    events.forEach(event => {
+      const app = event.application;
+      if (event.event_type === "window_focus" || event.event_type === "browser_tab") {
+        activeWindows.current.set(app, true);
+      }
+    });
+  }, [events]);
+
+  // Auto-advance when user switches to the expected app (only on app open, not close)
   const latestApp = events[0]?.application;
   useEffect(() => {
     if (!latestApp || currentStep >= steps.length) return;
     const expected = steps[currentStep]?.application;
     if (!expected) return;
+
+    // Check if the expected app is now actively being used
+    const isExpectedAppActive = activeWindows.current.get(expected.toLowerCase());
+
+    // Also check for match logic for edge cases
     const isMatch =
       latestApp.toLowerCase().includes(expected.toLowerCase()) ||
       expected.toLowerCase().includes(latestApp.toLowerCase());
-    if (isMatch) {
+
+    if (isExpectedAppActive || isMatch) {
+      // Prevent advancing when it's the last step and user just closed the app
+      if (currentStep === steps.length - 1) {
+        // Check if we're transitioning from the last app to a different app
+        // This is a common scenario when users close the last app in the flow
+        const wasLastApp = activeWindows.current.get(steps[steps.length - 1]?.application?.toLowerCase() || "") === true;
+        const isDifferentApp = latestApp.toLowerCase() !== expected.toLowerCase();
+
+        // Don't advance if:
+        // 1. We were on the last app and it's now closed (not in active windows)
+        if (wasLastApp && !isExpectedAppActive) return;
+
+        // 2. User hasn't opened the next step (new step isn't in active windows yet)
+        const nextStepIndex = steps.length;
+        if (nextStepIndex < steps.length) {
+          const nextStepApp = steps[nextStepIndex]?.application;
+          if (nextStepApp && !activeWindows.current.get(nextStepApp.toLowerCase())) {
+            return;
+          }
+        }
+      }
+
       const nextStep = currentStep + 1;
       void fetch(
         `http://127.0.0.1:8000/api/v1/flows/${session.id}/step?steps_completed=${nextStep}`,
@@ -97,7 +139,7 @@ export function FlowOverlay({ session, onClose, onStepUpdate }: FlowOverlayProps
       );
       onStepUpdate(nextStep);
     }
-  }, [latestApp, currentStep, steps, session.id, onStepUpdate]);
+  }, [latestApp, currentStep, steps, session.id, onStepUpdate, activeWindows]);
 
   const handleNextStep = useCallback(() => {
     if (currentStep < steps.length) {

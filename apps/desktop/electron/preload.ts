@@ -122,7 +122,14 @@ const flowSense = {
       ipcRenderer.on(IPC.WINDOW_BLUR, handler);
       return () => ipcRenderer.removeListener(IPC.WINDOW_BLUR, handler);
     },
+    onFlowShortcutTriggered: (cb: Listener<number>) => {
+      const handler = (_e: unknown, payload: unknown) => cb(payload as number);
+      ipcRenderer.on("flow:shortcut-triggered", handler);
+      return () => ipcRenderer.removeListener("flow:shortcut-triggered", handler);
+    },
+    restartBackend: () => ipcRenderer.invoke("app:restartBackend") as Promise<void>,
   },
+
 };
 
 contextBridge.exposeInMainWorld("flowSense", flowSense);

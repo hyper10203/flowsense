@@ -3,32 +3,9 @@
 @tailwind utilities;
 
 @layer base {
+  /* Dark mode — default */
   :root {
-    color-scheme: light;
-    /* Light mode palette (Ethereal Glass) */
-    --bg: #f8f9ff;
-    --bg-surface: #eef4ff;
-    --bg-elevated: #ffffff;
-    --bg-subtle: #e5eeff;
-    --bg-hover: #dfe9fa;
-    --border: #d9e3f4;
-    --border-subtle: #e5eeff;
-    --border-strong: #c5c6cb;
-    --fg: #121c28;
-    --fg-muted: #45474b;
-    --fg-subtle: #75777c;
-    --accent: #356665;
-    --accent-hover: #396b69;
-    --accent-muted: #1a4e4d;
-    --accent-subtle: rgba(53, 102, 101, 0.12);
-    --success: #356665;
-    --warning: #805349;
-    --danger: #ba1a1a;
-  }
-
-  .dark {
     color-scheme: dark;
-    /* Dark mode palette (Granola Dark) */
     --bg: #101510;
     --bg-surface: #181d18;
     --bg-elevated: #1c211c;
@@ -47,6 +24,29 @@
     --success: #b6e9e7;
     --warning: #ffb95a;
     --danger: #ffb4ab;
+  }
+
+  /* Light mode — opted in */
+  .light {
+    color-scheme: light;
+    --bg: #f8f9ff;
+    --bg-surface: #eff4ff;
+    --bg-elevated: #ffffff;
+    --bg-subtle: #e8eefb;
+    --bg-hover: #e2e8f6;
+    --border: #c5c6cb;
+    --border-subtle: #dce3f0;
+    --border-strong: #75777c;
+    --fg: #151c25;
+    --fg-muted: #45474b;
+    --fg-subtle: #75777c;
+    --accent: #356665;
+    --accent-hover: #3a6b69;
+    --accent-muted: #1b4e4d;
+    --accent-subtle: rgba(53, 102, 101, 0.12);
+    --success: #356665;
+    --warning: #805349;
+    --danger: #ba1a1a;
   }
 
   html,

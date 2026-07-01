@@ -90,15 +90,6 @@ export function SettingsPage(): JSX.Element {
           label="Polling interval"
           formatValue={(v) => `${v}s`}
         />
-        <ToggleRow
-          label="Browser tracking"
-          description="Capture URLs from browser tabs."
-          checked={settings.browser_tracking}
-          onChange={(v) => {
-            localUpdate("browser_tracking", v);
-            updateSetting.mutate({ key: "browser_tracking", value: v });
-          }}
-        />
       </SettingsSection>
 
       <SettingsSection
@@ -117,29 +108,15 @@ export function SettingsPage(): JSX.Element {
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-xs font-medium text-fg">
             <Key size={13} className="text-accent" />
-            AI provider
+            AI provider: Gemini (only)
           </div>
-          <AccentSelect
-            value={settings.ai_provider}
-            onChange={(v) => {
-              const provider = AI_PROVIDERS.find((p) => p.id === v) ?? AI_PROVIDERS[0];
-              localUpdate("ai_provider", v);
-              updateSetting.mutate({ key: "ai_provider", value: v as never });
-              // Auto-set default model when provider changes
-              if (provider && settings.ai_model === "") {
-                localUpdate("ai_model", provider.defaultModel);
-                updateSetting.mutate({ key: "ai_model", value: provider.defaultModel as never });
-              }
-            }}
-            options={AI_PROVIDERS.map((p) => ({ value: p.id, label: p.label }))}
-          />
           <div className="space-y-1">
             <label className="block text-[11px] font-medium text-fg-muted">
               API key
             </label>
             <ApiKeyInput
               value={settings.ai_api_key}
-              placeholder={AI_PROVIDERS.find((p) => p.id === settings.ai_provider)?.keyPlaceholder ?? "API key"}
+              placeholder="AI API key"
               onChange={(v) => {
                 localUpdate("ai_api_key", v);
                 updateSetting.mutate({ key: "ai_api_key", value: v as never });
@@ -150,22 +127,45 @@ export function SettingsPage(): JSX.Element {
             <label className="block text-[11px] font-medium text-fg-muted">
               Model
             </label>
-            <input
-              type="text"
+            <select
               value={settings.ai_model}
-              placeholder={AI_PROVIDERS.find((p) => p.id === settings.ai_provider)?.defaultModel ?? ""}
               onChange={(e) => {
                 const v = e.target.value;
                 localUpdate("ai_model", v);
                 updateSetting.mutate({ key: "ai_model", value: v as never });
               }}
               className="w-full px-3 py-1.5 rounded-lg bg-bg-subtle border border-border text-xs text-fg outline-none focus:ring-1 focus:ring-accent/40 focus:border-accent/30 transition-colors"
-            />
+            >
+              <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+              <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite</option>
+              <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+              <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+            </select>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={async () => {
+                try {
+                  const result = await ipc().ai.validateKey();
+                  ipc().notifications.show({
+                    title: result.valid ? "API key valid" : "API key invalid",
+                    body: result.message,
+                  });
+                } catch (err) {
+                  ipc().notifications.show({
+                    title: "Validation failed",
+                    body: String(err),
+                  });
+                }
+              }}
+            >
+              Test connection
+            </Button>
           </div>
           <p className="text-[10px] text-fg-subtle leading-relaxed">
-            Set env var <code className="px-1 py-0.5 rounded bg-bg-subtle text-accent/80">AI_API_KEY</code> and{" "}
-            <code className="px-1 py-0.5 rounded bg-bg-subtle text-accent/80">AI_PROVIDER=gemini|openrouter|nvidia_nim|deepseek</code>{" "}
-            on the backend, or store the key here. Restart backend to apply.
+            Set env var <code className="px-1 py-0.5 rounded bg-bg-subtle text-accent/80">AI_API_KEY</code> on the backend, or store the key here. Restart backend to apply.
           </p>
         </div>
       </SettingsSection>
@@ -238,7 +238,7 @@ export function SettingsPage(): JSX.Element {
       </SettingsSection>
 
       <SettingsSection
-        title="Data"
+        title="Data & Backend"
         description="Export or clear your tracked data."
       >
         <div className="flex flex-wrap gap-2">
@@ -250,6 +250,13 @@ export function SettingsPage(): JSX.Element {
           >
             <Download size={14} />
             {exporting ? "Exporting…" : "Export data"}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => ipc().system.restartBackend()}
+          >
+            Restart backend
           </Button>
           <Button
             variant="danger"

@@ -162,6 +162,10 @@ function setupIpc(): void {
     return monitor.active;
   });
   ipcMain.handle("app:hide", () => mainWindow?.hide());
+  ipcMain.handle("app:restartBackend", () => {
+    stopBackend();
+    if (mainWindow) startBackend({ window: mainWindow });
+  });
 
   // Messages from the overlay window (rendered in the transparent top window)
   ipcMain.on("overlay:next", (_e, appName: string) => {

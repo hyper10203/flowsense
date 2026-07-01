@@ -46,6 +46,12 @@ export interface ToastEntry {
   createdAt: string;
 }
 
+// Dark is the default — only add the `light` class when user opts in.
+function applyThemeClass(t: Theme): void {
+  document.documentElement.classList.toggle("light", t === "light");
+  document.documentElement.classList.toggle("dark", t !== "light");
+}
+
 const AppContext = createContext<AppState | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }): JSX.Element {
@@ -75,14 +81,15 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
   useEffect(() => {
     const stored = (localStorage.getItem("flowsense:theme") as Theme | null) ?? "dark";
     setTheme(stored);
-    document.documentElement.classList.toggle("dark", stored === "dark");
+    applyThemeClass(stored);
   }, []);
 
-  // Keep <html class="dark"> in sync with the dark_mode setting (Settings page toggle).
+  // Keep theme class in sync with the dark_mode setting (Settings page toggle).
   useEffect(() => {
-    document.documentElement.classList.toggle("dark", settings.dark_mode);
-    if (settings.dark_mode !== (theme === "dark")) {
-      setTheme(settings.dark_mode ? "dark" : "light");
+    const useLight = !settings.dark_mode;
+    applyThemeClass(useLight ? "light" : "dark");
+    if ((useLight && theme !== "light") || (!useLight && theme !== "dark")) {
+      setTheme(useLight ? "light" : "dark");
     }
   }, [settings.dark_mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -106,7 +113,7 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
     setTheme((prev) => {
       const next: Theme = prev === "dark" ? "light" : "dark";
       localStorage.setItem("flowsense:theme", next);
-      document.documentElement.classList.toggle("dark", next === "dark");
+      applyThemeClass(next);
       return next;
     });
   }, []);
