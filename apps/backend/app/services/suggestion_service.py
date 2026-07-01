@@ -50,14 +50,20 @@ def set_suggestion_status(db: Session, suggestion_id: int, status: str) -> Sugge
 
 
 def dismiss_for_workflow(db: Session, workflow_id: int) -> None:
-    suggestions = db.execute(
-        select(Suggestion).where(
-            Suggestion.workflow_id == workflow_id,
-            Suggestion.status == "pending",
-        )
-    ).scalars().all()
+    suggestion = db.execute(
+        select(Suggestion).where(Suggestion.workflow_id == workflow_id)
+    ).scalar_one_or_none()
+
     now = datetime.now(UTC)
-    for s in suggestions:
-        s.status = "dismissed"
-        s.action_at = now
+    if suggestion is None:
+        suggestion = Suggestion(
+            workflow_id=workflow_id,
+            status="dismissed",
+            shown_at=now,
+            action_at=now,
+        )
+        db.add(suggestion)
+    else:
+        suggestion.status = "dismissed"
+        suggestion.action_at = now
     db.flush()

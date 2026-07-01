@@ -58,6 +58,8 @@ export class ActivityMonitor {
   private intervalMs = 5000;
   private lastWindow = "";
   private lastApplication = "";
+  private lastUrl: string | null = null;
+  private lastCommandLine: string | null = null;
   private lastTimestamp = Date.now();
   private isRunning = false;
   private isPaused = false;
@@ -66,6 +68,10 @@ export class ActivityMonitor {
 
   setInterval(ms: number): void {
     this.intervalMs = Math.max(1000, Math.min(30_000, ms));
+    if (this.isRunning && this.timer) {
+      clearInterval(this.timer);
+      this.timer = setInterval(() => this.tick(), this.intervalMs);
+    }
   }
 
   setWindow(win: BrowserWindow): void {
@@ -103,47 +109,68 @@ export class ActivityMonitor {
   }
 
   private async tick(): Promise<void> {
-  if (!this.isRunning || this.isPaused || !this.mainWindow) return;
-  try {
-    const info = this.getActiveWindow();
-    if (!info) return;
-    if (EXCLUDED_APPS.has(info.application.toLowerCase())) {
-      // Still advance the timestamp so next tick measures from now,
-      // but don't record anything.
-      this.lastTimestamp = Date.now();
-      return;
+    if (!this.isRunning || this.isPaused || !this.mainWindow) return;
+    try {
+      const info = this.getActiveWindow();
+      if (!info) return;
+
+      if (EXCLUDED_APPS.has(info.application.toLowerCase())) {
+        this.lastTimestamp = Date.now();
+        return;
+      }
+
+      const now = Date.now();
+      const rawDuration = now - this.lastTimestamp;
+      const duration = Math.min(rawDuration, 30 * 60 * 1000); // cap at 30min
+
+      const sameWindow =
+        info.application === this.lastApplication &&
+        info.windowTitle === this.lastWindow;
+
+      if (sameWindow) {
+        this.lastTimestamp = now;
+        return;
+      }
+
+      // Window changed! Record the duration for the PREVIOUS window.
+      if (this.lastApplication) {
+        const isPrevTerminal = TERMINAL_APPS.has(this.lastApplication.toLowerCase());
+        const prevPayload: ActivityPayload = {
+          timestamp: new Date(now - duration).toISOString(),
+          application: this.lastApplication,
+          window_title: this.lastWindow,
+          url: this.lastUrl,
+          command_line: this.lastCommandLine,
+          event_type: isPrevTerminal ? "terminal" : this.lastUrl ? "browser_tab" : "window_focus",
+          duration_ms: duration,
+          session_id: this.sessionId,
+        };
+        this.mainWindow.webContents.send(IPC.ACTIVITY_TRACKED, prevPayload);
+      }
+
+      // Now start tracking the NEW window.
+      this.lastApplication = info.application;
+      this.lastWindow = info.windowTitle;
+      this.lastUrl = info.url;
+      this.lastCommandLine = info.commandLine;
+      this.lastTimestamp = now;
+
+      const isTerminal = TERMINAL_APPS.has(info.application.toLowerCase());
+      const payload: ActivityPayload = {
+        timestamp: new Date().toISOString(),
+        application: info.application,
+        window_title: info.windowTitle,
+        url: info.url,
+        command_line: info.commandLine,
+        event_type: isTerminal ? "terminal" : info.url ? "browser_tab" : "window_focus",
+        duration_ms: 0, // New window just started
+        session_id: this.sessionId,
+      };
+      this.mainWindow.webContents.send(IPC.ACTIVITY_TRACKED, payload);
+    } catch (err) {
+      console.error("[ActivityMonitor] tick failed:", err);
     }
-    const now = Date.now();
-    // ponytail: cap at 30min so stepping away from desk for 8h
-    // doesn't log a single 28800-minute "Chrome" event.
-    // 30min (1_800_000ms) covers any real single-window session.
-    const MAX_SESSION_MS = 30 * 60 * 1000;
-    const rawDuration = now - this.lastTimestamp;
-    const duration = Math.min(rawDuration, MAX_SESSION_MS);
-    const sameWindow =
-      info.application === this.lastApplication &&
-      info.windowTitle === this.lastWindow;
-    // Always advance the timestamp so the next tick measures from now.
-    this.lastTimestamp = now;
-    if (sameWindow) return;
-    this.lastWindow = info.windowTitle;
-    this.lastApplication = info.application;
-    const isTerminal = TERMINAL_APPS.has(info.application.toLowerCase());
-    const payload: ActivityPayload = {
-      timestamp: new Date().toISOString(),
-      application: info.application,
-      window_title: info.windowTitle,
-      url: info.url,
-      command_line: info.commandLine,
-      event_type: isTerminal ? "terminal" : info.url ? "browser_tab" : "window_focus",
-      duration_ms: duration,
-      session_id: this.sessionId,
-    };
-    this.mainWindow.webContents.send(IPC.ACTIVITY_TRACKED, payload);
-  } catch (err) {
-    console.error("[ActivityMonitor] tick failed:", err);
   }
-}
 
   private getActiveWindow(): ActiveWindowInfo | null {
     const os = platform();
@@ -242,7 +269,7 @@ Write-Output "CMD|$cmdLine"`;
       ["-c", "xdotool getactivewindow getwindowname 2>/dev/null || echo"],
       { encoding: "utf8", timeout: 4000 }
     ).trim();
-    return this.buildWindowInfo(out.split("\n")[0] ?? "Unknown", title, null);
+    return this.buildWindowInfo(out.split("\\n")[0] ?? "Unknown", title, null);
   }
 
   private buildWindowInfo(
@@ -269,7 +296,7 @@ Write-Output "CMD|$cmdLine"`;
   private extractTerminalCommand(cmdLine: string, app: string): string | null {
     if (!cmdLine) return null;
     // Strip the executable path, keep the arguments
-    const parts = cmdLine.split(/\s+/).filter(Boolean);
+    const parts = cmdLine.split(/\\s+/).filter(Boolean);
     if (parts.length <= 1) return null;
     // Remove the exe path (first part)
     const args = parts.slice(1).join(" ").trim();

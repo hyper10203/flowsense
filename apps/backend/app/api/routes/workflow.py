@@ -13,6 +13,11 @@ class RenameWorkflowRequest(BaseModel):
     name: str
 
 
+class CreateWorkflowRequest(BaseModel):
+    name: str
+    steps: list[dict]
+
+
 @router.get("")
 def list_workflows(db: Session = Depends(get_db)):
     workflows = workflow_service.get_workflows(db)
@@ -40,6 +45,13 @@ def list_workflows(db: Session = Depends(get_db)):
         }
         for w in workflows
     ]
+
+@router.post("")
+def create_workflow(body: CreateWorkflowRequest, db: Session = Depends(get_db)):
+    wf = workflow_service.create_user_workflow(db, body.name, body.steps)
+    db.commit()
+    return {"success": True, "id": wf.id}
+
 
 
 @router.get("/{workflow_id}")

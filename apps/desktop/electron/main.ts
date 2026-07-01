@@ -197,6 +197,10 @@ app.whenReady().then(() => {
   // Auto-start tracking once the window is ready so activity data flows
   // without requiring the user to click the tray/button.
   mainWindow?.once("ready-to-show", () => {
+    const pollingInterval = store.get("polling_interval") as number;
+    if (pollingInterval) {
+      monitor.setInterval(pollingInterval * 1000);
+    }
     monitor.start();
     tray.setMonitoring(true);
     mainWindow?.webContents.send(IPC.MONITORING_STATE_CHANGED, true);

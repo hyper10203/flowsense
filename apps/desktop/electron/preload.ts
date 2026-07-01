@@ -57,7 +57,15 @@ const flowSense = {
       return () => ipcRenderer.removeListener(IPC.SETTINGS_CHANGED, handler);
     },
   },
+  ai: {
+    validateKey: () =>
+      ipcRenderer.invoke("ai:validateKey") as Promise<{
+        valid: boolean;
+        message: string;
+      }>,
+  },
   system: {
+
     getVersion: () =>
       ipcRenderer.invoke(IPC.VERSION_GET) as Promise<{
         version: string;

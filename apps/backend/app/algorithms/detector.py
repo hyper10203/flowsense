@@ -1,24 +1,32 @@
 """Sliding-window sequence mining with frequency counting and confidence scoring."""
 
+from urllib.parse import urlparse
 import hashlib
 from collections import defaultdict
 from dataclasses import dataclass
 
 from app.algorithms.normalizer import NormalizedEvent
 
-
 @dataclass(slots=True)
 class DetectedWorkflow:
     hash: str
-    steps: list[str]
+    steps: list[tuple[str, str | None]]
     frequency: int
     confidence: float
     first_seen: int
     last_seen: int
 
+def get_step_id(e: NormalizedEvent) -> str:
+    if e.url:
+        try:
+            parsed = urlparse(e.url)
+            return f"web:{parsed.netloc}"
+        except Exception:
+            return e.application
+    return e.application
 
-def _sequence_hash(steps: tuple[str, ...]) -> str:
-    return hashlib.sha256("|".join(steps).encode("utf-8")).hexdigest()
+def _sequence_hash(identifiers: tuple[str, ...]) -> str:
+    return hashlib.sha256("|".join(identifiers).encode("utf-8")).hexdigest()
 
 
 def detect_workflows(
@@ -48,12 +56,12 @@ def detect_workflows(
                 for j in range(len(window) - 1)
             ):
                 continue
-            if any(window[j].application == window[j + 1].application for j in range(len(window) - 1)):
+            if any(get_step_id(window[j]) == get_step_id(window[j + 1]) for j in range(len(window) - 1)):
                 continue
-            steps = tuple(e.application for e in window)
-            h = _sequence_hash(steps)
+            identifiers = tuple(get_step_id(e) for e in window)
+            h = _sequence_hash(identifiers)
             freq[h] += 1
-            step_map[h] = steps
+            step_map[h] = tuple((e.application, e.url) for e in window)
             last_seen[h] = max(last_seen.get(h, 0), window[-1].timestamp)
             if h not in first_seen:
                 first_seen[h] = window[0].timestamp

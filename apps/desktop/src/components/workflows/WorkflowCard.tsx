@@ -183,9 +183,21 @@ export function WorkflowCard({
             <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border-subtle">
               <span className="text-xs text-success font-medium">Saved</span>
               {existing && (
-                <span className="text-[10px] font-mono text-fg-subtle bg-bg-subtle rounded px-1.5 py-0.5">
-                  {existing.accelerator}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono text-fg-subtle bg-bg-subtle rounded px-1.5 py-0.5">
+                    {existing.accelerator}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShortcuts(shortcuts.filter((s) => s.workflow_id !== workflow.id));
+                    }}
+                    className="text-fg-subtle hover:text-danger transition-colors"
+                    title="Clear shortcut"
+                  >
+                    <X size={10} />
+                  </button>
+                </div>
               )}
               <div className="flex-1" />
               <Button

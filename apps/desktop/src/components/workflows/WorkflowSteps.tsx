@@ -21,7 +21,7 @@ export function WorkflowSteps({ steps }: WorkflowStepsProps): JSX.Element {
           </span>
           <span className="text-fg truncate">{step.application}</span>
           <span className="text-fg-muted truncate flex-1">
-            · {step.window_title}
+            · {step.url_pattern || step.window_title}
           </span>
           {i < steps.length - 1 && (
             <ArrowRight size={12} className="text-fg-subtle shrink-0" />

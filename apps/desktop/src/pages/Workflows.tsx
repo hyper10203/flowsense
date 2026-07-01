@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Brain, Pencil, Sparkles, Workflow } from "lucide-react";
+import { Brain, Pencil, Sparkles, Workflow, Plus } from "lucide-react";
 import {
   useAcceptSuggestion,
   useAiErrorToasts,
   useDismissSuggestion,
+  useDismissWorkflow,
   useRenameWorkflow,
   useStartFlow,
   useSuggestions,
@@ -14,20 +15,25 @@ import { ErrorState } from "../components/ui/ErrorState.jsx";
 import { EmptyState } from "../components/ui/EmptyState.jsx";
 import { Skeleton } from "../components/ui/Skeleton.jsx";
 import { WorkflowCard } from "../components/workflows/WorkflowCard.jsx";
+import { CreateWorkflowDialog } from "../components/workflows/CreateWorkflowDialog.jsx";
 import type { Workflow as WorkflowType } from "@flowsense/shared";
+
 
 type Tab = "workflows" | "suggestions";
 
 export function WorkflowsPage(): JSX.Element {
   const [tab, setTab] = useState<Tab>("workflows");
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const { data: workflows, isLoading: wfLoading, isError: wfError, refetch: refetchWf } = useWorkflows();
   const { data: suggestions, isLoading: sgLoading, refetch: refetchSg } = useSuggestions();
   const rename = useRenameWorkflow();
   const acceptSuggestion = useAcceptSuggestion();
   const dismissSuggestion = useDismissSuggestion();
+  const dismissWorkflow = useDismissWorkflow();
   const startFlow = useStartFlow();
   const { setActiveFlow } = useApp();
   useAiErrorToasts();
+
 
   const handleStartFlow = (workflowId: number) => {
     startFlow.mutate(workflowId, {
@@ -65,7 +71,16 @@ export function WorkflowsPage(): JSX.Element {
             Detected patterns and AI suggestions — all in one place.
           </p>
         </div>
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => setIsCreateOpen(true)}
+          className="flex items-center gap-2"
+        >
+          <Plus size={14} /> Create Workflow
+        </Button>
       </div>
+
 
       {/* Tab switcher */}
       <div className="flex items-center gap-1 p-1 rounded-xl bg-bg-subtle border border-border w-fit">
@@ -130,6 +145,7 @@ export function WorkflowsPage(): JSX.Element {
               workflow={w}
               onRename={(name) => handleRename(w, name)}
               onStartFlow={handleStartFlow}
+              onDismiss={(id) => dismissWorkflow.mutate(id)}
               delay={i * 0.05}
             />
           ))}
@@ -174,6 +190,16 @@ export function WorkflowsPage(): JSX.Element {
                   </button>
                   <button
                     type="button"
+                    onClick={() => {
+                      // Placeholder for edit suggestion logic
+                      console.log("Edit suggestion:", s.id);
+                    }}
+                    className="px-3 py-1 rounded-lg bg-bg-subtle hover:bg-border text-fg-subtle text-xs font-medium transition-colors"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => dismissSuggestion.mutate(s.id)}
                     className="px-3 py-1 rounded-lg bg-bg-subtle hover:bg-border text-fg-subtle text-xs font-medium transition-colors"
                   >
@@ -185,6 +211,14 @@ export function WorkflowsPage(): JSX.Element {
           )}
         </div>
       )}
+      <CreateWorkflowDialog
+        open={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onSuccess={() => {
+          refetchWf();
+          setIsCreateOpen(false);
+        }}
+      />
     </div>
   );
 }

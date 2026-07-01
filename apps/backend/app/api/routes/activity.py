@@ -1,5 +1,6 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
+
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -62,7 +63,7 @@ def _maybe_run_detection(db: Session) -> None:
                 "application": e.application,
                 "window_title": e.window_title,
                 "url": e.url,
-                "timestamp": e.timestamp.isoformat() if hasattr(e.timestamp, "isoformat") else str(e.timestamp),
+                "timestamp": e.timestamp.replace(tzinfo=timezone.utc).isoformat() if hasattr(e.timestamp, "replace") else str(e.timestamp),
             }
             for e in events
         ]
@@ -156,7 +157,7 @@ def list_activities(
         items=[
             {
                 "id": a.id,
-                "timestamp": a.timestamp.isoformat(),
+                "timestamp": a.timestamp.replace(tzinfo=timezone.utc).isoformat() if hasattr(a.timestamp, "replace") else str(a.timestamp),
                 "application": a.application,
                 "window_title": a.window_title,
                 "url": a.url,

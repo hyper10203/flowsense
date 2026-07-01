@@ -23,7 +23,7 @@ const NAV: NavItem[] = [
   { route: "timeline", label: "Timeline", icon: <Activity size={16} /> },
   { route: "workflows", label: "Workflows", icon: <Workflow size={16} /> },
   { route: "analytics", label: "Analytics", icon: <BarChart3 size={16} /> },
-};
+];
 
 export function Sidebar(): JSX.Element {
   const { route, setRoute, monitoring } = useApp();
@@ -37,7 +37,7 @@ export function Sidebar(): JSX.Element {
       collapsed ? "w-14" : "w-56"
     )}>
       <div className={cn(
-        "flex items-center gap-2 px-4 py-4 border-b border-border-subtle",
+        "flex items-center gap-2 px-4 h-14 border-b border-border-subtle",
         collapsed && "justify-center"
       )}>
         <div className="relative w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
@@ -56,7 +56,7 @@ export function Sidebar(): JSX.Element {
               {monitoring ? "monitoring" : "paused"}
             </div>
           </div>
-        </div>
+        )}
       </div>
       <nav
         className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto"
@@ -105,9 +105,9 @@ export function Sidebar(): JSX.Element {
         {!collapsed ? (
           <div className="text-[10px] text-fg-subtle leading-tight">
             AI-powered focus companion
-            <br />v0.1.0
+            <br />v2.0.0
           </div>
-        ) : null
+        ) : null}
         <button
           onClick={toggleCollapsed}
           type="button"

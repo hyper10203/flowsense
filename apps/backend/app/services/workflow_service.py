@@ -2,9 +2,12 @@
 
 from collections.abc import Sequence
 from datetime import UTC, datetime
+import uuid
 
-from sqlalchemy import select
+
+from sqlalchemy import select, exists, and_
 from sqlalchemy.orm import Session
+
 
 from app.algorithms.detector import DetectedWorkflow, detect_workflows
 from app.algorithms.normalizer import NormalizedEvent
@@ -24,7 +27,17 @@ def run_detection(db: Session, events: list[NormalizedEvent]) -> Sequence[Detect
 
 
 def get_workflows(db: Session) -> Sequence[Workflow]:
-    query = select(Workflow).order_by(Workflow.frequency.desc(), Workflow.confidence.desc())
+    from app.models.suggestion import Suggestion
+    query = (
+        select(Workflow)
+        .where(~exists().where(
+            and_(
+                Suggestion.workflow_id == Workflow.id,
+                Suggestion.status == "dismissed"
+            )
+        ))
+        .order_by(Workflow.frequency.desc(), Workflow.confidence.desc())
+    )
     return db.execute(query).scalars().all()
 
 
@@ -34,6 +47,31 @@ def get_workflow(db: Session, workflow_id: int) -> Workflow | None:
 
 def get_workflow_by_hash(db: Session, hash_: str) -> Workflow | None:
     return db.execute(select(Workflow).where(Workflow.hash == hash_)).scalar_one_or_none()
+
+
+def create_user_workflow(db: Session, name: str, steps: list[dict]) -> Workflow:
+    workflow = Workflow(
+        hash=f"user_{uuid.uuid4()}",
+        ai_name=name,
+        frequency=1,
+        confidence=1.0,
+        first_seen=datetime.now(UTC),
+        last_seen=datetime.now(UTC),
+    )
+    db.add(workflow)
+    db.flush()
+    for order, step_data in enumerate(steps):
+        step = WorkflowStep(
+            workflow_id=workflow.id,
+            step_order=order,
+            application=step_data["application"],
+            window_title=step_data.get("window_title", step_data["application"]),
+            url_pattern=step_data.get("url_pattern"),
+        )
+        db.add(step)
+    db.flush()
+    db.refresh(workflow)
+    return workflow
 
 
 def save_detected_workflow(db: Session, detected: DetectedWorkflow) -> Workflow:
@@ -55,13 +93,13 @@ def save_detected_workflow(db: Session, detected: DetectedWorkflow) -> Workflow:
     )
     db.add(workflow)
     db.flush()
-    for order, app in enumerate(detected.steps):
+    for order, (app, url) in enumerate(detected.steps):
         step = WorkflowStep(
             workflow_id=workflow.id,
             step_order=order,
             application=app,
             window_title=app,
-            url_pattern=None,
+            url_pattern=url,
         )
         db.add(step)
     db.flush()
