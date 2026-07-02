@@ -43,9 +43,9 @@ Just install it and keep working.
 
 ---
 
-## Project Screenshots
+## Project Screenshot
 
-> 
+> <img width="1280" height="922" alt="Screenshot 2026-07-02 15-04-48" src="https://github.com/user-attachments/assets/a65ed58a-8215-404d-b3fe-0a88a9d1921c" />
 
 ---
 
@@ -75,17 +75,18 @@ Track:
 - Active window titles
 - Time spent in each app
 
-Everything updates in real time.
-
 ---
 
 ### AI workflow naming
 
 Optionally connect your preferred model to generate names and summaries for detected workflows.
 
-Supported providers rn Google Gemini
-No AI is required to use FlowSense.
-p.s.-Updates in future for more wider number of providers 
+Supported providers:Google Gemini
+
+No AI is compulsorily required to use FlowSense.
+
+p.s.- Updates in future for more wider number of providers 
+
 ---
 
 ### Analytics
@@ -98,12 +99,6 @@ See how you spend your time with:
 - Workflow frequency
 - Productivity heatmaps
 
-No fake demo data.
-
-If there's nothing to show, FlowSense simply says:
-
-> No analytics yet.
-
 ---
 
 ### Search
@@ -115,17 +110,12 @@ Search across:
 - Workflows
 - Window titles
 
-Everything is indexed locally.
-
 ---
 
 ### Local-first
 
-Your activity stays on your computer.
-
-FlowSense doesn't require an account or a cloud service.
-
-The only external requests are optional AI calls that you explicitly configure.
+Your activity stays on your computer. FlowSense doesn't require an account or a cloud service.
+The only external requests are optional AI calls that you explicitly configure. (I hate orgs invading our privacy and data for their use and income)
 
 ---
 
@@ -169,11 +159,8 @@ Desktop Activity
 - FastAPI
 - SQLAlchemy
 - SQLite
-
-### Browser
-
-- Chrome Extension (Manifest V3)
-
+- Chrome Extension
+  
 ---
 
 ## Project Structure
@@ -217,7 +204,7 @@ npm run dev
 
 ## Privacy
 
-FlowSense is designed to work locally.
+FlowSense is designed to work locally. (again I hate invasion of my privacy hope yall appreciate it)
 
 It never uploads:
 
@@ -252,6 +239,8 @@ is sent to the selected provider.
 - [ ] Weekly reports
 - [ ] Focus mode
 - [ ] AutoHotkey export
+- [ ] Conversational mode
+
 
 ---
 
