@@ -14,6 +14,7 @@ import { useApp } from "../store.jsx";
 import { ErrorState } from "../components/ui/ErrorState.jsx";
 import { EmptyState } from "../components/ui/EmptyState.jsx";
 import { Skeleton } from "../components/ui/Skeleton.jsx";
+import { Button } from "../components/ui/Button.tsx";
 import { WorkflowCard } from "../components/workflows/WorkflowCard.jsx";
 import { CreateWorkflowDialog } from "../components/workflows/CreateWorkflowDialog.jsx";
 import type { Workflow as WorkflowType } from "@flowsense/shared";
