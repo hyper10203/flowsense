@@ -105,7 +105,7 @@ export function Sidebar(): JSX.Element {
         {!collapsed ? (
           <div className="text-[10px] text-fg-subtle leading-tight">
             AI-powered focus companion
-            <br />v2.0.0
+            <br />v2.0.2
           </div>
         ) : null}
         <button
