@@ -57,6 +57,8 @@ export const api = {
         method: "POST",
         body: JSON.stringify(event),
       }),
+    deleteAll: async () => { await request<void>("/activity", { method: "DELETE" }); },
+  },
   },
   analytics: {
     summary: () => request<AnalyticsSummary>("/analytics/summary"),

@@ -87,11 +87,30 @@ export class ActivityMonitor {
   }
 
   stop(): void {
+    this.flush();
     this.isRunning = false;
     if (this.timer) {
       clearInterval(this.timer);
       this.timer = null;
     }
+  }
+
+  private flush(): void {
+    if (!this.mainWindow || !this.lastApplication) return;
+    const now = Date.now();
+    const duration = now - this.lastTimestamp;
+    const isTerminal = TERMINAL_APPS.has(this.lastApplication.toLowerCase());
+    const payload: ActivityPayload = {
+      timestamp: new Date(now).toISOString(),
+      application: this.lastApplication,
+      window_title: this.lastWindow,
+      url: this.lastUrl,
+      command_line: this.lastCommandLine,
+      event_type: isTerminal ? "terminal" : this.lastUrl ? "browser_tab" : "window_focus",
+      duration_ms: duration,
+      session_id: this.sessionId,
+    };
+    this.mainWindow.webContents.send(IPC.ACTIVITY_TRACKED, payload);
   }
 
   pause(): void {
@@ -128,7 +147,6 @@ export class ActivityMonitor {
         info.windowTitle === this.lastWindow;
 
       if (sameWindow) {
-        this.lastTimestamp = now;
         return;
       }
 
@@ -136,7 +154,7 @@ export class ActivityMonitor {
       if (this.lastApplication) {
         const isPrevTerminal = TERMINAL_APPS.has(this.lastApplication.toLowerCase());
         const prevPayload: ActivityPayload = {
-          timestamp: new Date(now - duration).toISOString(),
+          timestamp: new Date(now).toISOString(),
           application: this.lastApplication,
           window_title: this.lastWindow,
           url: this.lastUrl,

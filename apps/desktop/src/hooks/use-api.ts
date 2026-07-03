@@ -158,6 +158,18 @@ export function useUpdateSetting() {
   });
 }
 
+export function useDeleteActivity() {
+  const qc = useQueryClient();
+  return useMutation<void, ApiError, void>({
+    mutationFn: () => api.activity.deleteAll(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["activity-list"] });
+      qc.invalidateQueries({ queryKey: ["workflows"] });
+      qc.invalidateQueries({ queryKey: ["suggestions"] });
+    },
+  });
+}
+
 export function useAcceptWorkflow() {
   const qc = useQueryClient();
   return useMutation<void, ApiError, number>({
@@ -284,8 +296,8 @@ export function useStopFlow() {
       qc.invalidateQueries({ queryKey: ["active-flow"] });
       qc.invalidateQueries({ queryKey: ["flow-history"] });
       ipc().notifications.show({
-        title: "Flow mode ended",
-        body: "Great session! Check your history for details.",
+        title: "Flow stopped",
+        body: "Your current flow session has been ended.",
         silent: true,
       });
     },

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Download, Eye, EyeOff, Key, Trash2 } from "lucide-react";
-import { useExportData, useSettings, useUpdateSetting } from "../hooks/use-api.js";
+import { useDeleteActivity, useExportData, useSettings, useUpdateSetting } from "../hooks/use-api.js";
 import { useApp } from "../store.jsx";
 import { SettingsSection } from "../components/settings/SettingsSection.jsx";
 import { ToggleRow } from "../components/settings/ToggleRow.jsx";
@@ -16,6 +16,7 @@ export function SettingsPage(): JSX.Element {
   const { data: backendSettings, isLoading } = useSettings();
   const updateSetting = useUpdateSetting();
   const exportData = useExportData();
+  const deleteActivity = useDeleteActivity();
   const { settings, updateSetting: localUpdate, resetSettings } = useApp();
   const [exporting, setExporting] = useState(false);
 
@@ -39,11 +40,19 @@ export function SettingsPage(): JSX.Element {
     }
   };
 
-  const handleClearHistory = (): void => {
-    ipc().notifications.show({
-      title: "History cleared",
-      body: "All tracked activity has been removed.",
-    });
+  const handleClearHistory = async (): Promise<void> => {
+    try {
+      await deleteActivity.mutateAsync();
+      ipc().notifications.show({
+        title: "History cleared",
+        body: "All tracked activity has been removed.",
+      });
+    } catch (err) {
+      ipc().notifications.show({
+        title: "Clear failed",
+        body: "Could not clear history. Please try again.",
+      });
+    }
   };
 
   if (isLoading && !backendSettings) {

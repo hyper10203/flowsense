@@ -63,7 +63,7 @@ def _maybe_run_detection(db: Session) -> None:
                 "application": e.application,
                 "window_title": e.window_title,
                 "url": e.url,
-                "timestamp": e.timestamp.replace(tzinfo=timezone.utc).isoformat() if hasattr(e.timestamp, "replace") else str(e.timestamp),
+                "timestamp": e.timestamp.astimezone(timezone.utc).isoformat() if hasattr(e.timestamp, "astimezone") else str(e.timestamp),
             }
             for e in events
         ]
@@ -157,7 +157,7 @@ def list_activities(
         items=[
             {
                 "id": a.id,
-                "timestamp": a.timestamp.replace(tzinfo=timezone.utc).isoformat() if hasattr(a.timestamp, "replace") else str(a.timestamp),
+                "timestamp": a.timestamp.astimezone(timezone.utc).isoformat() if hasattr(a.timestamp, "astimezone") else str(a.timestamp),
                 "application": a.application,
                 "window_title": a.window_title,
                 "url": a.url,

@@ -21,8 +21,10 @@ def create_activity(
     duration_ms: int = 0,
     session_id: str | None = None,
 ) -> Activity:
+    # Ensure timestamp is stored as UTC
+    utc_timestamp = timestamp.astimezone(UTC) if timestamp.tzinfo else timestamp.replace(tzinfo=UTC)
     activity = Activity(
-        timestamp=timestamp,
+        timestamp=utc_timestamp,
         application=application.strip(),
         window_title=window_title.strip(),
         url=url,
@@ -47,7 +49,7 @@ def list_activities(
     end: datetime | None = None,
     application: str | None = None,
 ) -> tuple[Sequence[Activity], int]:
-    query = select(Activity)
+    query = select(Activity).where(Activity.application != "Idle")
     if start is not None:
         query = query.where(Activity.timestamp >= start)
     if end is not None:
