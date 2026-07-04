@@ -238,7 +238,6 @@ is sent to the selected provider.
 - [x] Browser URL tracking
 - [x] Terminal tracking
 - [x] Dynamic overlay
-- [ ] Firefox extension
 - [ ] Weekly reports
 - [ ] Focus mode
 - [ ] AutoHotkey export
