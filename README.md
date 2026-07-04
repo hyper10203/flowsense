@@ -46,6 +46,9 @@ Just install it and keep working.
 ## Project Screenshot
 
 > <img width="1280" height="922" alt="Screenshot 2026-07-02 15-04-48" src="https://github.com/user-attachments/assets/a65ed58a-8215-404d-b3fe-0a88a9d1921c" />
+> <img width="1531" height="1000" alt="Screenshot 2026-07-04 16-23-21" src="https://github.com/user-attachments/assets/45be359c-c2a4-4edf-aacd-c7b5e2e26b03" />
+> <img width="883" height="363" alt="Screenshot 2026-07-04 16-23-32" src="https://github.com/user-attachments/assets/78b189f1-991d-44d7-b748-9b42028bbe3a" />
+
 
 ---
 
