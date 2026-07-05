@@ -288,7 +288,7 @@ export function SettingsPage(): JSX.Element {
       <DangerZone onClearHistory={handleClearHistory} onExportData={handleExport} />
 
       <div className="text-[10px] text-fg-subtle text-center pt-4">
-        FlowSense v0.1.0 · Made with care
+        FlowSense v2.0.6 · Made with care
       </div>
     </div>
   );

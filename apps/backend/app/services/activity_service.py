@@ -3,7 +3,7 @@
 from collections.abc import Sequence
 from datetime import UTC, datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.models.activity import Activity
@@ -66,6 +66,7 @@ def list_activities(
 
 
 def delete_all(db: Session) -> int:
-    count = db.query(Activity).delete() or 0
+    stmt = delete(Activity)
+    result = db.execute(stmt)
     db.flush()
-    return count
+    return result.rowcount

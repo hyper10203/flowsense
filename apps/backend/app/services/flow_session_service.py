@@ -3,7 +3,7 @@
 from collections.abc import Sequence
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.models.flow_session import FlowSession
@@ -74,3 +74,11 @@ def update_step(db: Session, session_id: int, steps_completed: int) -> FlowSessi
     db.flush()
     db.refresh(session)
     return session
+
+
+def delete_all(db: Session) -> int:
+    stmt = delete(FlowSession)
+    result = db.execute(stmt)
+    db.flush()
+    return result.rowcount
+

@@ -1,6 +1,7 @@
 import { BrowserWindow, screen } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { existsSync } from "node:fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,6 +19,15 @@ let overlay: BrowserWindow | null = null;
 
 function resolveOverlayPath(): string {
   if (isDev) return "http://localhost:5173/overlay.html";
+
+  const { app } = require("electron");
+  const root = app.isPackaged ? app.getAppPath() : path.join(__dirname, "..", "..");
+  const publicPath = path.join(root, "public", "overlay.html");
+  const distPath = path.join(root, "dist", "overlay.html");
+
+  if (existsSync(publicPath)) return publicPath;
+  if (existsSync(distPath)) return distPath;
+
   return path.join(__dirname, "..", "dist", "overlay.html");
 }
 

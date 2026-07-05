@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.config import settings
 from app.models.activity import Activity
-from app.services import activity_service
+from app.services import activity_service, flow_session_service
 
 
 def _ai_key_configured() -> bool:
@@ -157,7 +157,7 @@ def list_activities(
         items=[
             {
                 "id": a.id,
-                "timestamp": a.timestamp.astimezone(timezone.utc).isoformat() if hasattr(a.timestamp, "astimezone") else str(a.timestamp),
+                "timestamp": a.timestamp.astimezone(timezone.utc).isoformat().replace("+00:00", "Z") if hasattr(a.timestamp, "astimezone") else str(a.timestamp),
                 "application": a.application,
                 "window_title": a.window_title,
                 "url": a.url,
@@ -176,6 +176,7 @@ def list_activities(
 
 @router.delete("")
 def delete_all(db: Session = Depends(get_db)):
-    count = activity_service.delete_all(db)
+    activity_count = activity_service.delete_all(db)
+    flow_count = flow_session_service.delete_all(db)
     db.commit()
-    return {"success": True, "deleted": count}
+    return {"success": True, "deleted_activities": activity_count, "deleted_flows": flow_count}

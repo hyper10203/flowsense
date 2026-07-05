@@ -179,6 +179,7 @@ function setupIpc(): void {
   });
 }
 
+app.disableHardwareAcceleration();
 app.whenReady().then(() => {
   setupSingleInstance();
   setupLifecycle();

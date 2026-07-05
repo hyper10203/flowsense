@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { platform } from "node:os";
-import type { BrowserWindow } from "electron";
+import { BrowserWindow, powerMonitor } from "electron";
 import { IPC } from "./ipc-channels.js";
 
 export interface ActiveWindowInfo {
@@ -142,15 +142,25 @@ export class ActivityMonitor {
       const rawDuration = now - this.lastTimestamp;
       const duration = Math.min(rawDuration, 30 * 60 * 1000); // cap at 30min
 
+      // Check for system idle
+      let isSystemIdle = false;
+      try {
+        const idleSeconds = powerMonitor.getSystemIdleTime();
+        if (idleSeconds > 300) isSystemIdle = true;
+      } catch {}
+
+      const currentApp = isSystemIdle ? "Idle" : info.application;
+      const currentWindow = isSystemIdle ? "Idle" : info.windowTitle;
+
       const sameWindow =
-        info.application === this.lastApplication &&
-        info.windowTitle === this.lastWindow;
+        currentApp === this.lastApplication &&
+        currentWindow === this.lastWindow;
 
       if (sameWindow) {
         return;
       }
 
-      // Window changed! Record the duration for the PREVIOUS window.
+      // Window changed or Idle state changed! Record the duration for the PREVIOUS window.
       if (this.lastApplication) {
         const isPrevTerminal = TERMINAL_APPS.has(this.lastApplication.toLowerCase());
         const prevPayload: ActivityPayload = {
@@ -166,21 +176,21 @@ export class ActivityMonitor {
         this.mainWindow.webContents.send(IPC.ACTIVITY_TRACKED, prevPayload);
       }
 
-      // Now start tracking the NEW window.
-      this.lastApplication = info.application;
-      this.lastWindow = info.windowTitle;
-      this.lastUrl = info.url;
-      this.lastCommandLine = info.commandLine;
+      // Now start tracking the NEW window/state.
+      this.lastApplication = currentApp;
+      this.lastWindow = currentWindow;
+      this.lastUrl = isSystemIdle ? null : info.url;
+      this.lastCommandLine = isSystemIdle ? null : info.commandLine;
       this.lastTimestamp = now;
 
-      const isTerminal = TERMINAL_APPS.has(info.application.toLowerCase());
+      const isTerminal = TERMINAL_APPS.has(currentApp.toLowerCase());
       const payload: ActivityPayload = {
         timestamp: new Date().toISOString(),
-        application: info.application,
-        window_title: info.windowTitle,
-        url: info.url,
-        command_line: info.commandLine,
-        event_type: isTerminal ? "terminal" : info.url ? "browser_tab" : "window_focus",
+        application: currentApp,
+        window_title: currentWindow,
+        url: this.lastUrl,
+        command_line: this.lastCommandLine,
+        event_type: isTerminal ? "terminal" : this.lastUrl ? "browser_tab" : "window_focus",
         duration_ms: 0, // New window just started
         session_id: this.sessionId,
       };

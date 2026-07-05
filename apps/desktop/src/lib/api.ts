@@ -59,13 +59,11 @@ export const api = {
       }),
     deleteAll: async () => { await request<void>("/activity", { method: "DELETE" }); },
   },
-  },
   analytics: {
     summary: () => request<AnalyticsSummary>("/analytics/summary"),
-    dailyTrend: (days = 30) =>
-      request<DailyTrendPoint[]>(`/analytics/trend?days=${days}`),
+    dailyTrend: (days = 30) => request<DailyTrendPoint[]>(`/analytics/trend?days=${days}`),
     appUsage: () => request<AppUsagePoint[]>(`/analytics/app-usage`),
-    hourly: () => request<{ hour: string; minutes: number }[]>("/analytics/hourly"),
+    hourly: () => request<{ hour: string; minutes: number }[]>( "/analytics/hourly"),
   },
   workflows: {
     list: () => request<Workflow[]>("/workflows"),
