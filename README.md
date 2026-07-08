@@ -12,6 +12,8 @@ A local-first desktop app that learns how you work, discovers repetitive workflo
   <img src="https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white">
   <img src="https://img.shields.io/badge/SQLite-003B57?logo=sqlite&logoColor=white">
   <img src="https://img.shields.io/badge/License-MIT-success">
+  <img src="https://img.shields.io/badge/Node.js-6DA55F?logo=node.js&logoColor=white">
+  
 </p>
 
 </div>
