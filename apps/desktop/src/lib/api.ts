@@ -107,6 +107,19 @@ export const api = {
       });
     },
   },
+  ai: {
+    models: (provider: Settings["ai_provider"]) =>
+      request<{ provider: string; models: { id: string; name: string }[]; source: string }>(
+        `/ai/models?provider=${encodeURIComponent(provider)}`
+      ),
+  },
+  voice: {
+    command: (transcript: string, speakFeedback: boolean) =>
+      request<{ success: boolean; action: string; message: string; steps_completed: number }>("/voice/command", {
+        method: "POST",
+        body: JSON.stringify({ transcript, speak_feedback: speakFeedback }),
+      }),
+  },
 };
 
 export async function isBackendReachable(): Promise<boolean> {

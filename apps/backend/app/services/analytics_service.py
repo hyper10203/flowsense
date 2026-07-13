@@ -10,8 +10,13 @@ from app.models.activity import Activity
 from app.models.workflow import Workflow
 
 
-def _today_start_utc() -> datetime:
-    return datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+def _local_day_bounds_utc(days: int) -> tuple[datetime, datetime]:
+    """Return local-calendar day bounds as UTC for accurate user-facing charts."""
+    local_now = datetime.now().astimezone()
+    local_start = local_now.replace(hour=0, minute=0, second=0, microsecond=0)
+    start = (local_start - timedelta(days=days - 1)).astimezone(UTC)
+    end = (local_start + timedelta(days=1)).astimezone(UTC)
+    return start, end
 
 
 def summary(db: Session, *, start: datetime | None = None, end: datetime | None = None) -> dict:
@@ -27,21 +32,20 @@ def summary(db: Session, *, start: datetime | None = None, end: datetime | None 
         base = base.where(Activity.timestamp <= end)
 
     base_sub = base.subquery()
-    total_count = db.execute(select(func.count()).select_from(base_sub)).scalar_one() or 0
-
+    activity = base_sub.c
     # Productive: exclude Idle
     prod_ms = db.execute(
-        select(func.coalesce(func.sum(Activity.duration_ms), 0))
+        select(func.coalesce(func.sum(activity.duration_ms), 0))
         .select_from(base_sub)
-        .where(Activity.application != "Idle")
+        .where(activity.application != "Idle")
     ).scalar_one() or 0
     productive_minutes = round(prod_ms / 60000)
 
     # Idle: include only Idle
     idle_ms = db.execute(
-        select(func.coalesce(func.sum(Activity.duration_ms), 0))
+        select(func.coalesce(func.sum(activity.duration_ms), 0))
         .select_from(base_sub)
-        .where(Activity.application == "Idle")
+        .where(activity.application == "Idle")
     ).scalar_one() or 0
     idle_minutes = round(idle_ms / 60000)
 
@@ -51,11 +55,11 @@ def summary(db: Session, *, start: datetime | None = None, end: datetime | None 
 
     # Most used apps by real duration, not count.
     app_rows = db.execute(
-        select(Activity.application, func.sum(Activity.duration_ms).label("total_ms"))
+        select(activity.application, func.sum(activity.duration_ms).label("total_ms"))
         .select_from(base_sub)
-        .where(Activity.application != "Idle")
-        .group_by(Activity.application)
-        .order_by(func.sum(Activity.duration_ms).desc())
+        .where(activity.application != "Idle")
+        .group_by(activity.application)
+        .order_by(func.sum(activity.duration_ms).desc())
         .limit(5)
     ).all()
 
@@ -73,33 +77,12 @@ def summary(db: Session, *, start: datetime | None = None, end: datetime | None 
 
 def _count_app_switches(db: Session, base_sub) -> int:
     """Count how many times the user switched between different apps."""
-    from sqlalchemy import text
-    # Use a window function to compare each row with the previous one.
-    # Falls back to 0 on SQLite versions without window functions.
-    try:
-        query = text(
-            """
-            SELECT COUNT(*) FROM (
-              SELECT application,
-                     LAG(application) OVER (ORDER BY timestamp) AS prev_app
-              FROM (SELECT application, timestamp FROM activity WHERE timestamp IS NOT NULL) t
-            ) x
-            WHERE prev_app IS NOT NULL AND application != prev_app
-            """
-        )
-        # Apply the same time filter by joining with the base subquery.
-        rows = db.execute(
-            select(Activity.application, Activity.timestamp).select_from(base_sub).order_by(Activity.timestamp)
-        ).all()
-        if len(rows) < 2:
-            return 0
-        switches = 0
-        for i in range(1, len(rows)):
-            if rows[i].application != rows[i - 1].application:
-                switches += 1
-        return switches
-    except Exception:
-        return max(0, db.execute(select(func.count()).select_from(base_sub)).scalar_one_or_none() or 0 - 1)
+    rows = db.execute(
+        select(base_sub.c.application)
+        .where(base_sub.c.application != "Idle")
+        .order_by(base_sub.c.timestamp)
+    ).scalars().all()
+    return sum(current != previous for previous, current in zip(rows, rows[1:], strict=False))
 
 
 def timeline(db: Session, *, start: datetime, end: datetime) -> Sequence[Activity]:
@@ -112,16 +95,15 @@ def timeline(db: Session, *, start: datetime, end: datetime) -> Sequence[Activit
 
 
 def daily_trend(db: Session, days: int = 7) -> list[dict]:
-    end = _today_start_utc() + timedelta(days=1)
-    start = _today_start_utc() - timedelta(days=days - 1)
+    start, end = _local_day_bounds_utc(days)
     rows = db.execute(
         select(
-            func.date(Activity.timestamp).label("day"),
+            func.date(Activity.timestamp, "localtime").label("day"),
             func.sum(case((Activity.application != "Idle", Activity.duration_ms), else_=0)).label("prod_ms"),
             func.sum(case((Activity.application == "Idle", Activity.duration_ms), else_=0)).label("idle_ms"),
         )
-        .where(Activity.timestamp >= start)
-        .group_by(func.date(Activity.timestamp))
+        .where(Activity.timestamp >= start, Activity.timestamp < end)
+        .group_by(func.date(Activity.timestamp, "localtime"))
         .order_by("day")
     ).all()
     return [
@@ -141,11 +123,12 @@ def app_breakdown(db: Session, *, start: datetime | None = None, end: datetime |
     if end is not None:
         base = base.where(Activity.timestamp <= end)
     base_sub = base.subquery()
+    activity = base_sub.c
     rows = db.execute(
-        select(Activity.application, func.sum(Activity.duration_ms).label("total_ms"))
+        select(activity.application, func.sum(activity.duration_ms).label("total_ms"))
         .select_from(base_sub)
-        .group_by(Activity.application)
-        .order_by(func.sum(Activity.duration_ms).desc())
+        .group_by(activity.application)
+        .order_by(func.sum(activity.duration_ms).desc())
     ).all()
     total_ms = sum((r.total_ms or 0) for r in rows)
     return [
@@ -166,13 +149,14 @@ def hourly_breakdown(db: Session, *, start: datetime | None = None, end: datetim
     if end is not None:
         base = base.where(Activity.timestamp <= end)
     base_sub = base.subquery()
+    activity = base_sub.c
     rows = db.execute(
         select(
-            func.strftime("%H", Activity.timestamp).label("hour"),
-            func.sum(Activity.duration_ms).label("total_ms"),
+            func.strftime("%H", activity.timestamp, "localtime").label("hour"),
+            func.sum(activity.duration_ms).label("total_ms"),
         )
         .select_from(base_sub)
-        .group_by(func.strftime("%H", Activity.timestamp))
+        .group_by(func.strftime("%H", activity.timestamp, "localtime"))
         .order_by("hour")
     ).all()
     return [

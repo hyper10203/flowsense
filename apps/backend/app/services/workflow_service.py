@@ -1,13 +1,11 @@
 """Workflow persistence and detection orchestration."""
 
+import uuid
 from collections.abc import Sequence
 from datetime import UTC, datetime
-import uuid
 
-
-from sqlalchemy import select, exists, and_
+from sqlalchemy import and_, exists, select
 from sqlalchemy.orm import Session
-
 
 from app.algorithms.detector import DetectedWorkflow, detect_workflows
 from app.algorithms.normalizer import NormalizedEvent

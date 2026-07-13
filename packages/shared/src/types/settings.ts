@@ -1,4 +1,15 @@
-export type AiProvider = "gemini" | "openrouter" | "nvidia_nim" | "deepseek";
+export type AiProvider =
+  | "gemini"
+  | "openrouter"
+  | "nvidia_nim"
+  | "deepseek"
+  | "openai"
+  | "anthropic"
+  | "groq"
+  | "mistral"
+  | "together"
+  | "perplexity"
+  | "ollama";
 
 export interface ApiProviderConfig {
   provider: AiProvider;
@@ -27,6 +38,8 @@ export interface Settings {
   ai_model: string;
   terminal_tracking: boolean;
   browser_url_tracking: boolean;
+  voice_feedback: boolean;
+  automation_enabled: boolean;
   flow_shortcuts: FlowShortcut[];
 }
 
@@ -42,6 +55,13 @@ export const AI_PROVIDERS: { id: AiProvider; label: string; defaultModel: string
   { id: "openrouter", label: "OpenRouter", defaultModel: "google/gemini-2.0-flash-001:free", keyPlaceholder: "sk-or-..." },
   { id: "nvidia_nim", label: "NVIDIA NIM", defaultModel: "google/gemma-2-27b-it", keyPlaceholder: "nvapi-..." },
   { id: "deepseek", label: "DeepSeek", defaultModel: "deepseek-chat", keyPlaceholder: "sk-..." },
+  { id: "openai", label: "OpenAI", defaultModel: "gpt-4o-mini", keyPlaceholder: "sk-..." },
+  { id: "anthropic", label: "Anthropic", defaultModel: "claude-3-5-haiku-latest", keyPlaceholder: "sk-ant-..." },
+  { id: "groq", label: "Groq", defaultModel: "llama-3.3-70b-versatile", keyPlaceholder: "gsk_..." },
+  { id: "mistral", label: "Mistral", defaultModel: "mistral-small-latest", keyPlaceholder: "..." },
+  { id: "together", label: "Together AI", defaultModel: "meta-llama/Llama-3.3-70B-Instruct-Turbo", keyPlaceholder: "..." },
+  { id: "perplexity", label: "Perplexity", defaultModel: "sonar", keyPlaceholder: "pplx-..." },
+  { id: "ollama", label: "Ollama (local)", defaultModel: "llama3.2", keyPlaceholder: "Not required" },
 ];
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -58,5 +78,7 @@ export const DEFAULT_SETTINGS: Settings = {
   ai_model: "gemini-2.0-flash",
   terminal_tracking: true,
   browser_url_tracking: true,
+  voice_feedback: true,
+  automation_enabled: false,
   flow_shortcuts: [],
 };

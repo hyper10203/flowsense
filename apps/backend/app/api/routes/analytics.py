@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.time import utc_iso
 from app.services import analytics_service
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
@@ -28,7 +29,7 @@ def timeline(
     items = analytics_service.timeline(db, start=start, end=end)
     return [
         {
-            "timestamp": a.timestamp.isoformat(),
+            "timestamp": utc_iso(a.timestamp),
             "application": a.application,
             "window_title": a.window_title,
             "url": a.url,

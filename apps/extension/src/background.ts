@@ -9,6 +9,9 @@
 const BACKEND_URL = "http://127.0.0.1:8000";
 const ACTIVITY_ENDPOINT = `${BACKEND_URL}/api/v1/extension/activity`;
 const POLL_INTERVAL_MS = 5000;
+// Chrome's Manifest V3 alarms have a minimum interval of 30 seconds. Tab
+// activation and navigation events still trigger immediate captures.
+const ALARM_PERIOD_MINUTES = 0.5;
 const RECONNECT_DELAY_MS = 30_000;
 
 interface TabActivity {
@@ -101,18 +104,23 @@ function scheduleReconnect(): void {
   }, RECONNECT_DELAY_MS);
 }
 
+function updateBadge(): void {
+  void chrome.action.setBadgeBackgroundColor({ color: "#10b981" });
+  void chrome.action.setBadgeText({ text: monitoring ? "ON" : "" });
+}
+
 function startMonitoring(): void {
   if (monitoring) return;
   monitoring = true;
-  chrome.action.setBadgeBackgroundColor({ color: "#10b981" });
-  chrome.action.setBadgeText({ text: "ON" });
-  chrome.alarms.create("poll-tab", { periodInMinutes: POLL_INTERVAL_MS / 60_000 });
+  updateBadge();
+  chrome.alarms.create("poll-tab", { periodInMinutes: ALARM_PERIOD_MINUTES });
+  void captureAndSend();
 }
 
 function stopMonitoring(): void {
   monitoring = false;
   lastSent = null;
-  chrome.action.setBadgeText({ text: "" });
+  updateBadge();
   chrome.alarms.clear("poll-tab");
   if (reconnectTimer) {
     clearTimeout(reconnectTimer);
@@ -120,11 +128,16 @@ function stopMonitoring(): void {
   }
 }
 
-chrome.runtime.onInstalled.addListener(() => {
+function restoreMonitoring(): void {
   chrome.storage.local.get(["monitoring"], (result) => {
     if (result.monitoring) startMonitoring();
+    else updateBadge();
   });
-});
+}
+
+chrome.runtime.onInstalled.addListener(restoreMonitoring);
+chrome.runtime.onStartup.addListener(restoreMonitoring);
+restoreMonitoring();
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message === "start") {
@@ -136,9 +149,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     stopMonitoring();
     sendResponse({ ok: true });
   } else if (message === "status") {
-    sendResponse({ monitoring });
+    chrome.storage.local.get(["monitoring"], (result) => {
+      sendResponse({ monitoring: Boolean(result.monitoring) });
+    });
+    return true;
   }
-  return true;
+  return false;
 });
 
 chrome.action.onClicked.addListener(() => {
@@ -151,8 +167,11 @@ chrome.action.onClicked.addListener(() => {
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === "poll-tab" && monitoring) {
-    captureAndSend();
+  if (alarm.name === "poll-tab") {
+    chrome.storage.local.get(["monitoring"], (result) => {
+      monitoring = Boolean(result.monitoring);
+      if (monitoring) void captureAndSend();
+    });
   }
 });
 

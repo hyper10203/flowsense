@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.time import utc_iso
 from app.services import flow_session_service
 
 router = APIRouter(prefix="/flows", tags=["flows"])
@@ -26,7 +27,7 @@ def start_flow(body: StartFlowRequest, db: Session = Depends(get_db)):
         "workflow_id": session.workflow_id,
         "status": session.status,
         "steps_completed": session.steps_completed,
-        "started_at": session.started_at.isoformat(),
+        "started_at": utc_iso(session.started_at),
         "overlay_state": {
             "currentStep": session.steps_completed,
             "totalSteps": len(wf.steps) if wf else 0,
@@ -48,8 +49,8 @@ def stop_flow(session_id: int, body: StopFlowRequest, db: Session = Depends(get_
         "workflow_id": session.workflow_id,
         "status": session.status,
         "steps_completed": session.steps_completed,
-        "started_at": session.started_at.isoformat(),
-        "ended_at": session.ended_at.isoformat() if session.ended_at else None,
+        "started_at": utc_iso(session.started_at),
+        "ended_at": utc_iso(session.ended_at) if session.ended_at else None,
         "duration_seconds": session.duration_seconds,
     }
 
@@ -65,7 +66,7 @@ def get_active(db: Session = Depends(get_db)):
         "workflow_id": session.workflow_id,
         "status": session.status,
         "steps_completed": session.steps_completed,
-        "started_at": session.started_at.isoformat(),
+        "started_at": utc_iso(session.started_at),
         "workflow": {
             "id": wf.id,
             "ai_name": wf.ai_name,
@@ -90,8 +91,8 @@ def get_history(limit: int = 50, db: Session = Depends(get_db)):
             "workflow_id": s.workflow_id,
             "status": s.status,
             "steps_completed": s.steps_completed,
-            "started_at": s.started_at.isoformat(),
-            "ended_at": s.ended_at.isoformat() if s.ended_at else None,
+            "started_at": utc_iso(s.started_at),
+            "ended_at": utc_iso(s.ended_at) if s.ended_at else None,
             "duration_seconds": s.duration_seconds,
             "workflow_name": s.workflow.ai_name if s.workflow else None,
         }

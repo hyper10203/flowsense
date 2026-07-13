@@ -22,9 +22,22 @@ dev = [
     "ruff>=0.6.0",
     "mypy>=1.11.0",
 ]
+automation = [
+    "pynput>=1.7.7",
+    "pywinauto>=0.6.8; sys_platform == 'win32'",
+    "pyobjc-framework-ApplicationServices>=10.3; sys_platform == 'darwin'",
+    "pyatspi>=2.46; sys_platform == 'linux'",
+    "Pillow>=10.4.0",
+    "pytesseract>=0.3.13",
+    "playwright>=1.52.0",
+]
+voice = [
+    "kittentts @ https://github.com/KittenML/KittenTTS/releases/download/0.8.1/kittentts-0.8.1-py3-none-any.whl",
+]
 
-[tool.setuptools]
-packages = ["app"]
+[tool.setuptools.packages.find]
+include = ["app*"]
+namespaces = true
 
 [tool.ruff]
 target-version = "py312"

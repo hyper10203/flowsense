@@ -21,6 +21,8 @@ DEFAULTS: dict[str, Any] = {
     "ai_model": "gemini-2.0-flash",
     "terminal_tracking": True,
     "browser_url_tracking": True,
+    "voice_feedback": True,
+    "automation_enabled": False,
 }
 
 
@@ -29,7 +31,7 @@ def get_all_settings(db: Session) -> dict[str, Any]:
     rows = db.execute(query).scalars().all()
     result = dict(DEFAULTS)
     for row in rows:
-        value = row.value
+        value: Any = row.value
         if isinstance(DEFAULTS.get(row.key), bool):
             value = value.lower() in ("1", "true", "yes", "on")
         elif isinstance(DEFAULTS.get(row.key), int):

@@ -1,14 +1,38 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ChevronDown, ChevronUp, Play, X } from "lucide-react";
-import type { ActiveFlowSession } from "@flowsense/shared";
-import { useActivityStream, useStopFlow } from "../../hooks/use-api.js";
+import { Check, ChevronDown, ChevronUp, Mic, Play, X } from "lucide-react";
+import type { ActiveFlowSession, ActivityEvent } from "@flowsense/shared";
+import { useStopFlow } from "../../hooks/use-api.js";
 import { ipc } from "../../lib/ipc.js";
+import { api } from "../../lib/api.js";
+import { useApp } from "../../store.jsx";
 
 interface FlowOverlayProps {
   session: ActiveFlowSession;
+  events: ActivityEvent[];
   onClose: () => void;
   onStepUpdate: (stepsCompleted: number) => void;
+}
+
+interface SpeechRecognitionInstance {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start: () => void;
+  onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  onerror: (() => void) | null;
+  onend: (() => void) | null;
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance;
+
+function getSpeechRecognition(): SpeechRecognitionConstructor | undefined {
+  return (window as unknown as {
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
+  }).SpeechRecognition ?? (window as unknown as {
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
+  }).webkitSpeechRecognition;
 }
 
 /**
@@ -16,15 +40,17 @@ interface FlowOverlayProps {
  *  1. Universal overlay window (transparent, always-on-top) — the actual Dynamic Island pill that follows the user across all apps.
  *  2. This component — the in-app expanded panel visible when FlowSense is focused (shows step chips, progress list).
  */
-export function FlowOverlay({ session, onClose, onStepUpdate }: FlowOverlayProps): JSX.Element | null {
+export function FlowOverlay({ session, events, onClose, onStepUpdate }: FlowOverlayProps): JSX.Element | null {
   const stopFlow = useStopFlow();
-  const events = useActivityStream();
+  const { settings, pushToast } = useApp();
   const steps = session.workflow?.steps ?? [];
   const currentStep = session.steps_completed;
   const [expanded, setExpanded] = useState(false);
+  const [listening, setListening] = useState(false);
   const isComplete = currentStep >= steps.length;
   const currentAppName = steps[currentStep]?.application ?? "";
   const hasOpenedFirstApp = useRef(false);
+  const advancingEvent = useRef<string | null>(null);
 
   // Tell the universal overlay window to show on mount, hide on unmount
   useEffect(() => {
@@ -38,7 +64,6 @@ export function FlowOverlay({ session, onClose, onStepUpdate }: FlowOverlayProps
     return () => {
       void ipc().system.overlayHide();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Update overlay state on step change
@@ -80,66 +105,31 @@ export function FlowOverlay({ session, onClose, onStepUpdate }: FlowOverlayProps
     };
   }, [session.id, currentStep, stopFlow, onClose]);
 
-  // Track active apps to prevent advancing on app close
-  const activeWindows = useRef<Map<string, boolean>>(new Map());
-
+  // Auto-advance only for the event that actually activated the expected app.
+  // Keeping a historical "active windows" set caused repeated app names to
+  // complete future steps without the user returning to that app.
+  const latestEvent = events[0];
   useEffect(() => {
-    if (!events || events.length === 0) return;
-
-    // Track when an app becomes active
-    events.forEach(event => {
-      const app = event.application;
-      if (event.event_type === "window_focus" || event.event_type === "browser_tab") {
-        activeWindows.current.set(app, true);
-      }
-    });
-  }, [events]);
-
-  // Auto-advance when user switches to the expected app (only on app open, not close)
-  const latestApp = events[0]?.application;
-  useEffect(() => {
-    if (!latestApp || currentStep >= steps.length) return;
+    if (!latestEvent || currentStep >= steps.length) return;
     const expected = steps[currentStep]?.application;
     if (!expected) return;
 
-    // Check if the expected app is now actively being used
-    const isExpectedAppActive = activeWindows.current.get(expected.toLowerCase());
+    const currentApp = latestEvent.application.toLowerCase();
+    const expectedApp = expected.toLowerCase();
+    const matches = currentApp.includes(expectedApp) || expectedApp.includes(currentApp);
+    const eventKey = `${latestEvent.timestamp}:${latestEvent.application}:${latestEvent.duration_ms}`;
+    if (!matches || advancingEvent.current === eventKey) return;
 
-    // Also check for match logic for edge cases
-    const isMatch =
-      latestApp.toLowerCase().includes(expected.toLowerCase()) ||
-      expected.toLowerCase().includes(latestApp.toLowerCase());
-
-    if (isExpectedAppActive || isMatch) {
-      // Prevent advancing when it's the last step and user just closed the app
-      if (currentStep === steps.length - 1) {
-        // Check if we're transitioning from the last app to a different app
-        // This is a common scenario when users close the last app in the flow
-        const wasLastApp = activeWindows.current.get(steps[steps.length - 1]?.application?.toLowerCase() || "") === true;
-        const isDifferentApp = latestApp.toLowerCase() !== expected.toLowerCase();
-
-        // Don't advance if:
-        // 1. We were on the last app and it's now closed (not in active windows)
-        if (wasLastApp && !isExpectedAppActive) return;
-
-        // 2. User hasn't opened the next step (new step isn't in active windows yet)
-        const nextStepIndex = steps.length;
-        if (nextStepIndex < steps.length) {
-          const nextStepApp = steps[nextStepIndex]?.application;
-          if (nextStepApp && !activeWindows.current.get(nextStepApp.toLowerCase())) {
-            return;
-          }
-        }
-      }
-
-      const nextStep = currentStep + 1;
-      void fetch(
-        `http://127.0.0.1:8000/api/v1/flows/${session.id}/step?steps_completed=${nextStep}`,
-        { method: "POST" }
-      );
-      onStepUpdate(nextStep);
-    }
-  }, [latestApp, currentStep, steps, session.id, onStepUpdate, activeWindows]);
+    advancingEvent.current = eventKey;
+    const nextStep = currentStep + 1;
+    void api.flows
+      .updateStep(session.id, nextStep)
+      .then(() => onStepUpdate(nextStep))
+      .catch(() => {
+        // A later activity event can retry if the local backend is restarting.
+        advancingEvent.current = null;
+      });
+  }, [latestEvent, currentStep, steps, session.id, onStepUpdate]);
 
   const handleNextStep = useCallback(() => {
     if (currentStep < steps.length) {
@@ -151,6 +141,37 @@ export function FlowOverlay({ session, onClose, onStepUpdate }: FlowOverlayProps
     stopFlow.mutate({ sessionId: session.id, stepsCompleted: currentStep });
     onClose();
   }, [session.id, currentStep, stopFlow, onClose]);
+
+  const handleVoiceCommand = useCallback(() => {
+    const Recognition = getSpeechRecognition();
+    if (!Recognition) {
+      pushToast({ title: "Voice input unavailable", body: "Use a Chromium build with speech recognition enabled.", silent: false });
+      return;
+    }
+    const recognition = new Recognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = navigator.language || "en-US";
+    recognition.onresult = (event) => {
+      const transcript = event.results[0]?.[0]?.transcript?.trim();
+      if (!transcript) return;
+      void api.voice.command(transcript, settings.voice_feedback)
+        .then((result) => {
+          pushToast({ title: "Voice command", body: result.message, silent: false });
+          if (result.action === "stop") onClose();
+          else onStepUpdate(result.steps_completed);
+        })
+        .catch(() => {
+          pushToast({ title: "Voice command failed", body: "The local backend could not process that command.", silent: false });
+        });
+    };
+    recognition.onerror = () => {
+      pushToast({ title: "Voice input failed", body: "Microphone access was denied or recognition stopped.", silent: false });
+    };
+    recognition.onend = () => setListening(false);
+    setListening(true);
+    recognition.start();
+  }, [onClose, onStepUpdate, pushToast, settings.voice_feedback]);
 
   const progress = steps.length > 0 ? (currentStep / steps.length) * 100 : 0;
 
@@ -211,6 +232,19 @@ export function FlowOverlay({ session, onClose, onStepUpdate }: FlowOverlayProps
               >
                 <Check size={10} />
                 Done
+              </button>
+            )}
+
+            {!isComplete && (
+              <button
+                type="button"
+                onClick={handleVoiceCommand}
+                disabled={listening}
+                className="p-1.5 rounded-lg text-fg-subtle hover:text-accent hover:bg-accent/10 disabled:opacity-50 transition-colors shrink-0"
+                aria-label={listening ? "Listening for a voice command" : "Use a voice command"}
+                title="Voice commands: next, repeat, status, or stop"
+              >
+                <Mic size={13} className={listening ? "text-accent animate-pulse" : ""} />
               </button>
             )}
 

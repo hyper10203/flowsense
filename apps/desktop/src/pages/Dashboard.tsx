@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import {
   useActivityList,
-  useActivityStream,
   useAnalyticsSummary,
   useHourlyActivity,
   useWorkflows,
@@ -25,10 +24,6 @@ import { useApp } from "../store.jsx";
 import { useStartFlow } from "../hooks/use-api.js";
 
 export function DashboardPage(): JSX.Element {
-  // Mount the stream so IPC activity events get forwarded to the backend.
-  // The returned local events are a mirror of what the backend now stores.
-  useActivityStream();
-
   const {
     data: activityData,
     isLoading: activityLoading,

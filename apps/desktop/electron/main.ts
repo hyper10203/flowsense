@@ -139,14 +139,15 @@ function setupAutoLaunch(): void {
   });
 }
 
-function setupSingleInstance(): void {
+function setupSingleInstance(): boolean {
   if (!app.requestSingleInstanceLock()) {
     app.quit();
-    return;
+    return false;
   }
   app.on("second-instance", () => {
     showMainWindow();
   });
+  return true;
 }
 
 function setupIpc(): void {
@@ -181,12 +182,14 @@ function setupIpc(): void {
 
 app.disableHardwareAcceleration();
 app.whenReady().then(() => {
-  setupSingleInstance();
+  if (!setupSingleInstance()) return;
   setupLifecycle();
   setupAutoLaunch();
-  setupIpc();
   tray.create();
   createMainWindow();
+  // IPC handlers capture the main window for settings and shortcut events.
+  // Register them only after it exists.
+  setupIpc();
   if (mainWindow) startBackend({ window: mainWindow });
   // Register persisted flow shortcuts
   try {
@@ -218,6 +221,7 @@ app.on("before-quit", () => {
   isQuitting = true;
   monitor.stop();
   tray.destroy();
+  destroyOverlay();
   stopBackend();
 });
 

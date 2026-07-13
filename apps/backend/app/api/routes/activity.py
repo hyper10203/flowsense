@@ -1,14 +1,14 @@
 import logging
-from datetime import datetime, timezone
-
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
 from app.core.config import settings
+from app.core.database import get_db
+from app.core.time import utc_iso
 from app.models.activity import Activity
 from app.services import activity_service, flow_session_service
 
@@ -63,7 +63,7 @@ def _maybe_run_detection(db: Session) -> None:
                 "application": e.application,
                 "window_title": e.window_title,
                 "url": e.url,
-                "timestamp": e.timestamp.astimezone(timezone.utc).isoformat() if hasattr(e.timestamp, "astimezone") else str(e.timestamp),
+                "timestamp": utc_iso(e.timestamp),
             }
             for e in events
         ]
@@ -82,7 +82,7 @@ def _maybe_run_detection(db: Session) -> None:
                 import asyncio
                 try:
                     result = asyncio.run(
-                        name_workflow(det.steps, det.frequency, det.confidence)
+                        name_workflow(det.applications, det.frequency, det.confidence)
                     )
                     if result and "error" not in result:
                         wf.ai_name = result.get("name")
@@ -96,12 +96,12 @@ def _maybe_run_detection(db: Session) -> None:
 
             # Fallback: generate a name from steps if AI didn't provide one
             if wf.ai_name is None:
-                step_names = " → ".join(det.steps)
+                step_names = " → ".join(det.applications)
                 if step_names and len(step_names) > 0:
                     wf.ai_name = step_names if len(step_names) <= 100 else step_names[:97] + "..."
                 else:
                     wf.ai_name = f"Workflow #{wf.id}"
-                wf.description = f"You switch between {', '.join(det.steps)} {det.frequency} times."
+                wf.description = f"You switch between {', '.join(det.applications)} {det.frequency} times."
 
             # Auto-create suggestion for detected workflows
             create_suggestion_for_workflow(db, wf)
@@ -157,7 +157,7 @@ def list_activities(
         items=[
             {
                 "id": a.id,
-                "timestamp": a.timestamp.astimezone(timezone.utc).isoformat().replace("+00:00", "Z") if hasattr(a.timestamp, "astimezone") else str(a.timestamp),
+                "timestamp": utc_iso(a.timestamp),
                 "application": a.application,
                 "window_title": a.window_title,
                 "url": a.url,
@@ -179,4 +179,11 @@ def delete_all(db: Session = Depends(get_db)):
     activity_count = activity_service.delete_all(db)
     flow_count = flow_session_service.delete_all(db)
     db.commit()
-    return {"success": True, "deleted_activities": activity_count, "deleted_flows": flow_count}
+    return {
+        "success": True,
+        # Keep the original response field for API clients while exposing
+        # explicit counts for the dashboard's clear-history confirmation.
+        "deleted": activity_count,
+        "deleted_activities": activity_count,
+        "deleted_flows": flow_count,
+    }

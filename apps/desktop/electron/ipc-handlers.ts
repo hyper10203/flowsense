@@ -9,6 +9,7 @@ import { TrayManager } from "./tray-manager.js";
 import { IPC } from "./ipc-channels.js";
 import { showOverlay, updateOverlay, hideOverlay, type OverlayState } from "./overlay-window.js";
 import { createDesktopShortcut, pinToTaskbar, createDesktopShortcutAndPinTaskbar } from "./shortcuts.js";
+import { rebuildGlobalShortcuts } from "./global-shortcut.js";
 import { DEFAULT_SETTINGS, type FlowShortcut } from "@flowsense/shared";
 
 export interface IpcDependencies {
@@ -65,10 +66,7 @@ export function registerIpcHandlers(deps: IpcDependencies): void {
     settingsStore.set(key, value);
     mainWindow.webContents.send(IPC.SETTINGS_CHANGED, { key, value });
     if (key === "flow_shortcuts" && Array.isArray(value)) {
-      // Lazy import to avoid a cycle at module load
-      void import("./global-shortcut.js").then((m) =>
-        m.rebuildGlobalShortcuts(value as FlowShortcut[], mainWindow),
-      );
+      rebuildGlobalShortcuts(value as FlowShortcut[], mainWindow);
     }
     return true;
   });

@@ -9,6 +9,7 @@ import {
 } from "react";
 import { DEFAULT_SETTINGS, type ActiveFlowSession, type Settings } from "@flowsense/shared";
 import { ipc } from "./lib/ipc.js";
+import { isBackendReachable } from "./lib/api.js";
 
 export type Theme = "dark" | "light";
 export type Route =
@@ -65,8 +66,7 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
 
   const refreshBackendStatus = useCallback(async () => {
     try {
-      const v = await ipc().system.getVersion();
-      setBackendReachable(Boolean(v));
+      setBackendReachable(await isBackendReachable());
     } catch {
       setBackendReachable(false);
     }
@@ -77,6 +77,23 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
     const t = setInterval(refreshBackendStatus, 30_000);
     return () => clearInterval(t);
   }, [refreshBackendStatus]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void ipc()
+      .settings.get<Partial<Settings>>("")
+      .then((stored) => {
+        if (!cancelled && stored && typeof stored === "object") {
+          setSettings({ ...DEFAULT_SETTINGS, ...stored });
+        }
+      })
+      .catch(() => {
+        // The renderer remains usable with the shared defaults.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const stored = (localStorage.getItem("flowsense:theme") as Theme | null) ?? "dark";
@@ -91,7 +108,7 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
     if ((useLight && theme !== "light") || (!useLight && theme !== "dark")) {
       setTheme(useLight ? "light" : "dark");
     }
-  }, [settings.dark_mode]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [settings.dark_mode]);
 
   useEffect(() => {
     const handler = (
@@ -114,14 +131,20 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
       const next: Theme = prev === "dark" ? "light" : "dark";
       localStorage.setItem("flowsense:theme", next);
       applyThemeClass(next);
+      setSettings((current) => ({ ...current, dark_mode: next === "dark" }));
+      void ipc().settings.set("dark_mode", next === "dark");
       return next;
     });
   }, []);
 
   const setMonitoring = useCallback(async (v: boolean) => {
-    if (v) await ipc().monitoring.start();
-    else await ipc().monitoring.stop();
-    setMonitoringState(v);
+    try {
+      if (v) await ipc().monitoring.start();
+      else await ipc().monitoring.stop();
+      setMonitoringState(v);
+    } catch {
+      // Keep the visible state unchanged when the main process is unavailable.
+    }
   }, []);
 
   const updateSetting = useCallback(

@@ -22,6 +22,15 @@ function bundledPython(): string | null {
   return null;
 }
 
+function bundledPythonZip(pythonDir: string): string | null {
+  try {
+    const zip = fs.readdirSync(pythonDir).find((file) => /^python\d+\.zip$/i.test(file));
+    return zip ? path.join(pythonDir, zip) : null;
+  } catch {
+    return null;
+  }
+}
+
 function uvBinary(): string {
   const candidates = [
     path.join(process.env.HOME ?? process.env.USERPROFILE ?? "", ".local", "bin", "uv.exe"),
@@ -62,17 +71,14 @@ export function startBackend(opts: BackendOptions = {}): void {
   } else {
     python = bundled;
     cwd = root;
-    // Use -m so Python adds cwd to sys.path and can find the `app` package.
-    args = ["-m", "app.main"];
-    // Embeddable Python's python3xx._pth overrides PYTHONPATH. Remove it so our env works.
     pythonDir = path.dirname(python);
-    try {
-      for (const f of fs.readdirSync(pythonDir)) {
-        if (f.endsWith("._pth")) fs.unlinkSync(path.join(pythonDir, f));
-      }
-    } catch {
-      // ignore
-    }
+    // Embeddable Python may ignore PYTHONPATH when a python3xx._pth file is
+    // present. Add the backend root explicitly instead of modifying files in
+    // the installed application directory (which can be read-only).
+    args = [
+      "-c",
+      `import runpy, sys; sys.path.insert(0, ${JSON.stringify(root)}); runpy.run_module("app.main", run_name="__main__")`,
+    ];
   }
 
   const isBundled = !!bundled && !opts.preferExternal;
@@ -89,22 +95,27 @@ export function startBackend(opts: BackendOptions = {}): void {
               path.join(root, "app"),
               path.join(pythonDir, "Lib", "site-packages"),
               pythonDir,
-              path.join(pythonDir, "python313.zip"),
-            ].join(path.delimiter),
+              bundledPythonZip(pythonDir),
+            ].filter((entry): entry is string => Boolean(entry)).join(path.delimiter),
           }
         : {}),
     },
   });
 
-  backendProcess.stdout?.on("data", (d) => {
+  const child = backendProcess;
+  child.stdout?.on("data", (d) => {
     console.log("[backend]", d.toString().trim());
   });
-  backendProcess.stderr?.on("data", (d) => {
+  child.stderr?.on("data", (d) => {
     console.warn("[backend]", d.toString().trim());
   });
-  backendProcess.on("exit", (code) => {
+  child.on("error", (err) => {
+    console.error("[backend-runner] failed to start:", err);
+    if (backendProcess === child) backendProcess = null;
+  });
+  child.on("exit", (code) => {
     console.warn("[backend-runner] exited with code", code);
-    backendProcess = null;
+    if (backendProcess === child) backendProcess = null;
   });
 }
 

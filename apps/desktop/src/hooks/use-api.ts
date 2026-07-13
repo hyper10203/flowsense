@@ -144,6 +144,14 @@ export function useSettings() {
   });
 }
 
+export function useAiModels(provider: Settings["ai_provider"]) {
+  return useQuery({
+    queryKey: ["ai-models", provider],
+    queryFn: () => api.ai.models(provider),
+    staleTime: 5 * 60_000,
+  });
+}
+
 export function useUpdateSetting() {
   const qc = useQueryClient();
   return useMutation<

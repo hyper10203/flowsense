@@ -17,15 +17,18 @@ const flowSense = {
       const handler = (_e: unknown, payload: unknown) =>
         cb(payload as boolean);
       ipcRenderer.on(IPC.MONITORING_STATE_CHANGED, handler);
-      return () =>
+      return () => {
         ipcRenderer.removeListener(IPC.MONITORING_STATE_CHANGED, handler);
+      };
     },
   },
   activity: {
     onTracked: (cb: Listener) => {
       const handler = (_e: unknown, payload: unknown) => cb(payload);
       ipcRenderer.on(IPC.ACTIVITY_TRACKED, handler);
-      return () => ipcRenderer.removeListener(IPC.ACTIVITY_TRACKED, handler);
+      return () => {
+        ipcRenderer.removeListener(IPC.ACTIVITY_TRACKED, handler);
+      };
     },
   },
   data: {
@@ -42,7 +45,9 @@ const flowSense = {
     onToast: (cb: Listener) => {
       const handler = (_e: unknown, payload: unknown) => cb(payload);
       ipcRenderer.on("notification:toast", handler);
-      return () => ipcRenderer.removeListener("notification:toast", handler);
+      return () => {
+        ipcRenderer.removeListener("notification:toast", handler);
+      };
     },
   },
   settings: {
@@ -54,7 +59,9 @@ const flowSense = {
     onChanged: (cb: Listener<{ key: string; value: unknown }>) => {
       const handler = (_e: unknown, payload: unknown) => cb(payload as never);
       ipcRenderer.on(IPC.SETTINGS_CHANGED, handler);
-      return () => ipcRenderer.removeListener(IPC.SETTINGS_CHANGED, handler);
+      return () => {
+        ipcRenderer.removeListener(IPC.SETTINGS_CHANGED, handler);
+      };
     },
   },
   ai: {
@@ -98,42 +105,58 @@ const flowSense = {
     onOverlayNext: (cb: Listener<string>) => {
       const handler = (_e: unknown, payload: unknown) => cb(payload as string);
       ipcRenderer.on("overlay:next", handler);
-      return () => ipcRenderer.removeListener("overlay:next", handler);
+      return () => {
+        ipcRenderer.removeListener("overlay:next", handler);
+      };
     },
     onOverlayComplete: (cb: Listener) => {
       const handler = () => cb(undefined);
       ipcRenderer.on("overlay:complete", handler);
-      return () => ipcRenderer.removeListener("overlay:complete", handler);
+      return () => {
+        ipcRenderer.removeListener("overlay:complete", handler);
+      };
     },
     onOverlayClose: (cb: Listener) => {
       const handler = () => cb(undefined);
       ipcRenderer.on("overlay:close", handler);
-      return () => ipcRenderer.removeListener("overlay:close", handler);
+      return () => {
+        ipcRenderer.removeListener("overlay:close", handler);
+      };
     },
     onLock: (cb: Listener) => {
       const handler = () => cb(undefined);
       ipcRenderer.on("system:locked", handler);
-      return () => ipcRenderer.removeListener("system:locked", handler);
+      return () => {
+        ipcRenderer.removeListener("system:locked", handler);
+      };
     },
     onUnlock: (cb: Listener) => {
       const handler = () => cb(undefined);
       ipcRenderer.on("system:unlocked", handler);
-      return () => ipcRenderer.removeListener("system:unlocked", handler);
+      return () => {
+        ipcRenderer.removeListener("system:unlocked", handler);
+      };
     },
     onWindowFocus: (cb: Listener) => {
       const handler = () => cb(undefined);
       ipcRenderer.on(IPC.WINDOW_FOCUS, handler);
-      return () => ipcRenderer.removeListener(IPC.WINDOW_FOCUS, handler);
+      return () => {
+        ipcRenderer.removeListener(IPC.WINDOW_FOCUS, handler);
+      };
     },
     onWindowBlur: (cb: Listener) => {
       const handler = () => cb(undefined);
       ipcRenderer.on(IPC.WINDOW_BLUR, handler);
-      return () => ipcRenderer.removeListener(IPC.WINDOW_BLUR, handler);
+      return () => {
+        ipcRenderer.removeListener(IPC.WINDOW_BLUR, handler);
+      };
     },
     onFlowShortcutTriggered: (cb: Listener<number>) => {
       const handler = (_e: unknown, payload: unknown) => cb(payload as number);
       ipcRenderer.on("flow:shortcut-triggered", handler);
-      return () => ipcRenderer.removeListener("flow:shortcut-triggered", handler);
+      return () => {
+        ipcRenderer.removeListener("flow:shortcut-triggered", handler);
+      };
     },
     restartBackend: () => ipcRenderer.invoke("app:restartBackend") as Promise<void>,
   },

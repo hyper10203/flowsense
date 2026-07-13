@@ -10,8 +10,7 @@ const root = resolve(import.meta.dirname, "..");
 const src = resolve(root, "src");
 const dist = resolve(root, "dist");
 
-async function main() {
-  const watch = process.argv.includes("--watch");
+async function build() {
   await rm(dist, { recursive: true, force: true });
   await mkdir(dist, { recursive: true });
 
@@ -30,15 +29,22 @@ async function main() {
     await rm(distPath);
   }
 
-  if (watch) {
-    const { watch } = await import("node:fs");
-    let timer;
-    watch(src, { recursive: true }, () => {
-      clearTimeout(timer);
-      timer = setTimeout(() => main().catch(console.error), 200);
-    });
-    console.log("Watching extension/src...");
-  }
+}
+
+async function main() {
+  const watchMode = process.argv.includes("--watch");
+  await build();
+  if (!watchMode) return;
+
+  const { watch } = await import("node:fs");
+  let timer;
+  watch(src, { recursive: true }, () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      void build().catch(console.error);
+    }, 200);
+  });
+  console.log("Watching extension/src...");
 }
 
 main().catch((err) => {

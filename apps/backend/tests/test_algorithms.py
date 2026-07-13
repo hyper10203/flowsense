@@ -22,7 +22,7 @@ def test_detect_repeated_sequence():
     events = base * 5
     results = detect_workflows(events, min_frequency=3, min_confidence=0.5)
     assert len(results) >= 1
-    assert any("Chrome" in r.steps and "VS Code" in r.steps for r in results)
+    assert any("Chrome" in r.applications and "VS Code" in r.applications for r in results)
 
 
 def test_ignore_single_app_sequence():

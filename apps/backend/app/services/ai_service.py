@@ -27,7 +27,7 @@ WORKFLOW_NAMING_PROMPT = (
 )
 
 # Provider endpoint + model config
-PROVIDERS = {
+PROVIDERS: dict[str, dict[str, Any]] = {
     "gemini": {
         "url": "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
         "key_header": None,  # Gemini uses ?key= query param
@@ -50,6 +50,7 @@ PROVIDERS = {
             "response_format": {"type": "json_object"},
         },
         "extract": lambda data: (data.get("choices") or [{}])[0].get("message", {}).get("content"),
+        "models_url": "https://openrouter.ai/api/v1/models",
     },
     "nvidia_nim": {
         "url": "https://integrate.api.nvidia.com/v1/chat/completions",
@@ -62,6 +63,7 @@ PROVIDERS = {
             "max_tokens": 300,
         },
         "extract": lambda data: (data.get("choices") or [{}])[0].get("message", {}).get("content"),
+        "models_url": "https://integrate.api.nvidia.com/v1/models",
     },
     "deepseek": {
         "url": "https://api.deepseek.com/v1/chat/completions",
@@ -75,27 +77,150 @@ PROVIDERS = {
             "response_format": {"type": "json_object"},
         },
         "extract": lambda data: (data.get("choices") or [{}])[0].get("message", {}).get("content"),
+        "models_url": "https://api.deepseek.com/v1/models",
     },
+    "openai": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "key_header": "Authorization",
+        "key_prefix": "Bearer ",
+        "body": lambda prompt, model: {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.2,
+            "max_tokens": 300,
+            "response_format": {"type": "json_object"},
+        },
+        "extract": lambda data: (data.get("choices") or [{}])[0].get("message", {}).get("content"),
+        "models_url": "https://api.openai.com/v1/models",
+    },
+    "groq": {
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "key_header": "Authorization",
+        "key_prefix": "Bearer ",
+        "body": lambda prompt, model: {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.2,
+            "max_tokens": 300,
+            "response_format": {"type": "json_object"},
+        },
+        "extract": lambda data: (data.get("choices") or [{}])[0].get("message", {}).get("content"),
+        "models_url": "https://api.groq.com/openai/v1/models",
+    },
+    "mistral": {
+        "url": "https://api.mistral.ai/v1/chat/completions",
+        "key_header": "Authorization",
+        "key_prefix": "Bearer ",
+        "body": lambda prompt, model: {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.2,
+            "max_tokens": 300,
+            "response_format": {"type": "json_object"},
+        },
+        "extract": lambda data: (data.get("choices") or [{}])[0].get("message", {}).get("content"),
+        "models_url": "https://api.mistral.ai/v1/models",
+    },
+    "together": {
+        "url": "https://api.together.xyz/v1/chat/completions",
+        "key_header": "Authorization",
+        "key_prefix": "Bearer ",
+        "body": lambda prompt, model: {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.2,
+            "max_tokens": 300,
+            "response_format": {"type": "json_object"},
+        },
+        "extract": lambda data: (data.get("choices") or [{}])[0].get("message", {}).get("content"),
+        "models_url": "https://api.together.xyz/v1/models",
+    },
+    "perplexity": {
+        "url": "https://api.perplexity.ai/chat/completions",
+        "key_header": "Authorization",
+        "key_prefix": "Bearer ",
+        "body": lambda prompt, model: {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.2,
+            "max_tokens": 300,
+            "response_format": {"type": "json_object"},
+        },
+        "extract": lambda data: (data.get("choices") or [{}])[0].get("message", {}).get("content"),
+        "models_url": "https://api.perplexity.ai/models",
+    },
+    "anthropic": {
+        "url": "https://api.anthropic.com/v1/messages",
+        "key_header": "x-api-key",
+        "key_prefix": "",
+        "body": lambda prompt, model: {
+            "model": model,
+            "max_tokens": 300,
+            "temperature": 0.2,
+            "messages": [{"role": "user", "content": prompt}],
+        },
+        "extract": lambda data: (data.get("content") or [{}])[0].get("text"),
+    },
+    "ollama": {
+        "url": "http://127.0.0.1:11434/api/chat",
+        "key_header": None,
+        "body": lambda prompt, model: {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+            "format": "json",
+            "stream": False,
+        },
+        "extract": lambda data: data.get("message", {}).get("content"),
+        "models_url": "http://127.0.0.1:11434/api/tags",
+    },
+}
+
+DEFAULT_MODELS = {
+    "gemini": "gemini-2.0-flash",
+    "openrouter": "google/gemini-2.0-flash-001:free",
+    "nvidia_nim": "meta/llama-3.1-70b-instruct",
+    "deepseek": "deepseek-chat",
+    "openai": "gpt-4o-mini",
+    "anthropic": "claude-3-5-haiku-latest",
+    "groq": "llama-3.3-70b-versatile",
+    "mistral": "mistral-small-latest",
+    "together": "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+    "perplexity": "sonar",
+    "ollama": "llama3.2",
+}
+
+ENV_KEYS = {
+    "gemini": ("GEMINI_API_KEY",),
+    "openrouter": ("OPENROUTER_API_KEY",),
+    "nvidia_nim": ("NVIDIA_NIM_API_KEY",),
+    "deepseek": ("DEEPSEEK_API_KEY",),
+    "openai": ("OPENAI_API_KEY",),
+    "anthropic": ("ANTHROPIC_API_KEY",),
+    "groq": ("GROQ_API_KEY",),
+    "mistral": ("MISTRAL_API_KEY",),
+    "together": ("TOGETHER_API_KEY",),
+    "perplexity": ("PERPLEXITY_API_KEY",),
+    "ollama": (),
 }
 
 
 def _get_runtime_api_key() -> tuple[str, str, str]:
-    """Read provider + key + model. Priority: env vars (set by installer .env) > pydantic-settings."""
-    provider = os.environ.get("AI_PROVIDER", settings.ai_provider)
-    api_key = (
-        os.environ.get("GEMINI_API_KEY")
-        or os.environ.get("OPENROUTER_API_KEY")
-        or os.environ.get("NVIDIA_NIM_API_KEY")
-        or os.environ.get("DEEPSEEK_API_KEY")
-        or os.environ.get("AI_API_KEY")
-        or settings.gemini_api_key
-        or settings.openrouter_api_key
-        or settings.nvidia_nim_api_key
-        or settings.deepseek_api_key
-        or settings.ai_api_key
-        or ""
-    )
-    model = os.environ.get("AI_MODEL", settings.gemini_model)
+    """Read the selected provider's credential instead of picking an unrelated key."""
+    provider = os.environ.get("AI_PROVIDER", settings.ai_provider).lower()
+    if provider not in PROVIDERS:
+        provider = "gemini"
+    api_key = os.environ.get("AI_API_KEY", "")
+    if not api_key:
+        api_key = next((os.environ.get(key, "") for key in ENV_KEYS[provider] if os.environ.get(key)), "")
+    if not api_key:
+        provider_keys = {
+            "gemini": settings.gemini_api_key,
+            "openrouter": settings.openrouter_api_key,
+            "nvidia_nim": settings.nvidia_nim_api_key,
+            "deepseek": settings.deepseek_api_key,
+        }
+        api_key = provider_keys.get(provider) or settings.ai_api_key or ""
+    model = os.environ.get("AI_MODEL") or settings.gemini_model or DEFAULT_MODELS[provider]
     return provider, api_key, model
 
 
@@ -119,7 +244,7 @@ async def _call_ai(prompt: str) -> str:
         raise AIError(AIError.key_invalid, "No AI API key configured")
     provider = PROVIDERS.get(provider_name) or PROVIDERS["gemini"]
     if not model:
-        model = "gemini-2.0-flash" if provider_name == "gemini" else "google/gemini-2.0-flash-001:free"
+        model = DEFAULT_MODELS[provider_name]
 
     url = provider["url"].format(model=model)
     body = provider["body"](prompt, model)
@@ -131,6 +256,8 @@ async def _call_ai(prompt: str) -> str:
         headers[provider["key_header"]] = f"{prefix}{api_key}"
     elif provider.get("key_query"):
         params[provider["key_query"]] = api_key
+    if provider_name == "anthropic":
+        headers["anthropic-version"] = "2023-06-01"
 
     try:
         async with httpx.AsyncClient(timeout=settings.gemini_timeout_seconds) as client:
@@ -186,3 +313,51 @@ async def name_workflow(steps: list[str], frequency: int, confidence: float) -> 
         return None
     except AIError as exc:
         return {"error": exc.kind, "message": str(exc)}
+
+
+async def discover_models(provider_name: str, api_key: str = "") -> tuple[list[dict[str, str]], str]:
+    """Fetch models visible to the selected account, with a safe static fallback."""
+    provider_name = provider_name.lower()
+    provider = PROVIDERS.get(provider_name)
+    if provider is None:
+        return [], "unsupported"
+    if not api_key:
+        _runtime_provider, api_key, _model = _get_runtime_api_key()
+    if provider_name == "gemini":
+        url = "https://generativelanguage.googleapis.com/v1beta/models"
+        params = {"key": api_key} if api_key else {}
+    else:
+        url = str(provider.get("models_url") or "")
+        params = {}
+    if not url:
+        return [{"id": DEFAULT_MODELS[provider_name], "name": DEFAULT_MODELS[provider_name]}], "fallback"
+    headers: dict[str, str] = {}
+    if api_key and provider.get("key_header"):
+        headers[provider["key_header"]] = f"{provider.get('key_prefix', '')}{api_key}"
+    try:
+        async with httpx.AsyncClient(timeout=settings.gemini_timeout_seconds) as client:
+            response = await client.get(url, headers=headers, params=params)
+            response.raise_for_status()
+            data = response.json()
+        if provider_name == "gemini":
+            models = data.get("models", [])
+            return [
+                {"id": item["name"].removeprefix("models/"), "name": item.get("displayName") or item["name"]}
+                for item in models
+                if "generateContent" in item.get("supportedGenerationMethods", [])
+            ], "account"
+        if provider_name == "ollama":
+            return [
+                {"id": item["name"], "name": item["name"]}
+                for item in data.get("models", [])
+                if item.get("name")
+            ], "local"
+        return [
+            {"id": item["id"], "name": item.get("name") or item["id"]}
+            for item in data.get("data", [])
+            if item.get("id")
+        ], "account"
+    except (httpx.HTTPError, KeyError, TypeError, ValueError) as exc:
+        logger.info("Model discovery failed for %s: %s", provider_name, exc)
+        default = DEFAULT_MODELS[provider_name]
+        return [{"id": default, "name": default}], "fallback"

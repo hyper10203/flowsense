@@ -1,20 +1,27 @@
 """Sliding-window sequence mining with frequency counting and confidence scoring."""
 
-from urllib.parse import urlparse
 import hashlib
 from collections import defaultdict
 from dataclasses import dataclass
+from urllib.parse import urlparse
 
 from app.algorithms.normalizer import NormalizedEvent
+
+WorkflowStep = tuple[str, str | None]
 
 @dataclass(slots=True)
 class DetectedWorkflow:
     hash: str
-    steps: list[tuple[str, str | None]]
+    steps: list[WorkflowStep]
     frequency: int
     confidence: float
     first_seen: int
     last_seen: int
+
+    @property
+    def applications(self) -> list[str]:
+        """Application labels for presentation and AI naming."""
+        return [application for application, _url in self.steps]
 
 def get_step_id(e: NormalizedEvent) -> str:
     if e.url:
@@ -44,7 +51,7 @@ def detect_workflows(
     freq: dict[str, int] = defaultdict(int)
     first_seen: dict[str, int] = {}
     last_seen: dict[str, int] = {}
-    step_map: dict[str, tuple[str, ...]] = {}
+    step_map: dict[str, tuple[WorkflowStep, ...]] = {}
 
     for window_size in range(min_steps, max_steps + 1):
         if len(events) < window_size:
@@ -52,7 +59,7 @@ def detect_workflows(
         for i in range(len(events) - window_size + 1):
             window = events[i : i + window_size]
             if any(
-                window[j + 1].timestamp - window[j].timestamp > max_gap_seconds
+                not 0 <= window[j + 1].timestamp - window[j].timestamp <= max_gap_seconds
                 for j in range(len(window) - 1)
             ):
                 continue
@@ -71,7 +78,7 @@ def detect_workflows(
         if count < min_frequency:
             continue
         steps = step_map[h]
-        unique_apps = len(set(steps))
+        unique_apps = len({application for application, _url in steps})
         consistency = unique_apps / len(steps)
         frequency_score = min(1.0, count / 20)
         confidence = (

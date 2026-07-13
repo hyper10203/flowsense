@@ -33,7 +33,6 @@ export function Topbar({
     ipc().monitoring.status().then((s) => {
       if (s.active !== monitoring) setMonitoring(s.active);
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

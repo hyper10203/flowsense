@@ -2,6 +2,7 @@
 
 from collections.abc import Iterable
 from dataclasses import dataclass
+from datetime import datetime
 
 TRACKING_PARAMS = {
     "utm_source",
@@ -76,7 +77,7 @@ class NormalizedEvent:
 
 def normalize_application(process_name: str) -> str:
     key = process_name.strip().lower()
-    return PROCESS_NAME_MAP.get(key, process_name)
+    return PROCESS_NAME_MAP.get(key, process_name.strip())
 
 
 def normalize_url(url: str | None) -> str | None:
@@ -88,7 +89,7 @@ def normalize_url(url: str | None) -> str | None:
         parsed = urlparse(url)
         if not parsed.scheme or not parsed.netloc:
             return None
-        cleaned = urlunparse((parsed.scheme, parsed.netloc, parsed.path, parsed.params, "", parsed.fragment))
+        cleaned = urlunparse((parsed.scheme, parsed.netloc, parsed.path, parsed.params, "", ""))
         return cleaned
     except Exception:
         return url
@@ -98,23 +99,21 @@ def normalize_events(events: Iterable[dict]) -> list[NormalizedEvent]:
     result: list[NormalizedEvent] = []
     last_app: str | None = None
     for e in events:
-        app = normalize_application(e.get("application", "Unknown"))
+        app = normalize_application(str(e.get("application") or "Unknown"))
         if app == last_app and not e.get("url"):
             continue
         last_app = app
-        ts = e.get("timestamp")
+        ts: object = e.get("timestamp")
         if isinstance(ts, str):
-            from datetime import datetime
-
             try:
                 ts_dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
                 ts_epoch = int(ts_dt.timestamp())
-            except Exception:
-                ts_epoch = 0
-        elif hasattr(ts, "timestamp"):
+            except ValueError:
+                continue
+        elif isinstance(ts, datetime):
             ts_epoch = int(ts.timestamp())
         else:
-            ts_epoch = 0
+            continue
         result.append(
             NormalizedEvent(
                 application=app,

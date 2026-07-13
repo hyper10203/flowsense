@@ -69,4 +69,4 @@ def delete_all(db: Session) -> int:
     stmt = delete(Activity)
     result = db.execute(stmt)
     db.flush()
-    return result.rowcount
+    return int(getattr(result, "rowcount", 0) or 0)

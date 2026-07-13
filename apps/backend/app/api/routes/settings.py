@@ -41,6 +41,8 @@ def update_setting(body: SettingUpdate, db: Session = Depends(get_db)):
         "ai_model",
         "terminal_tracking",
         "browser_url_tracking",
+        "voice_feedback",
+        "automation_enabled",
     }
     if body.key not in allowed:
         raise HTTPException(status_code=400, detail=f"Unknown setting: {body.key}")

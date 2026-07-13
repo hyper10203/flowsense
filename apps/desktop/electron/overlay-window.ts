@@ -1,11 +1,11 @@
-import { BrowserWindow, screen } from "electron";
+import { app, BrowserWindow, screen } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { existsSync } from "node:fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const isDev = process.env.NODE_ENV !== "production";
+const isDev = !app.isPackaged;
 
 export interface OverlayState {
   currentStep: number;
@@ -16,11 +16,11 @@ export interface OverlayState {
 }
 
 let overlay: BrowserWindow | null = null;
+let displayMetricsListenerAttached = false;
 
 function resolveOverlayPath(): string {
   if (isDev) return "http://localhost:5173/overlay.html";
 
-  const { app } = require("electron");
   const root = app.isPackaged ? app.getAppPath() : path.join(__dirname, "..", "..");
   const publicPath = path.join(root, "public", "overlay.html");
   const distPath = path.join(root, "dist", "overlay.html");
@@ -76,10 +76,17 @@ export function createOverlayWindow(): BrowserWindow {
 
   overlay.on("closed", () => {
     overlay = null;
+    if (displayMetricsListenerAttached) {
+      screen.removeListener("display-metrics-changed", positionOverlay);
+      displayMetricsListenerAttached = false;
+    }
   });
 
   // Reposition if display changes
-  screen.on("display-metrics-changed", positionOverlay);
+  if (!displayMetricsListenerAttached) {
+    screen.on("display-metrics-changed", positionOverlay);
+    displayMetricsListenerAttached = true;
+  }
 
   const url = resolveOverlayPath();
   if (url.startsWith("http")) {

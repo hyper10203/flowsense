@@ -25,7 +25,9 @@ APPS = [
     ("Figma", "Design System"),
 ]
 
-WORKFLOW = ["Chrome", "VS Code", "Terminal", "Chrome"]
+# Keep each workflow step paired with a realistic window title.  The seeding
+# loop below expects `(application, title)` pairs, rather than bare app names.
+WORKFLOW = [APPS[1], APPS[2], APPS[3], APPS[4]]
 
 
 def seed():

@@ -1,6 +1,6 @@
 {
   "name": "@flowsense/shared",
-  "version": "1.0.0",
+  "version": "2.0.7",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
@@ -12,6 +12,7 @@
     }
   },
   "scripts": {
+    "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

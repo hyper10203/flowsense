@@ -4,12 +4,14 @@ from app.api.routes import (
     activity,
     ai,
     analytics,
+    automation,
     detect,
     extension,
     flow,
     search,
     settings,
     suggestion,
+    voice,
     workflow,
 )
 
@@ -24,3 +26,5 @@ api_router.include_router(search.router)
 api_router.include_router(settings.router)
 api_router.include_router(extension.router)
 api_router.include_router(detect.router)
+api_router.include_router(automation.router)
+api_router.include_router(voice.router)

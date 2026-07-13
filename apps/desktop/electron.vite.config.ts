@@ -1,12 +1,12 @@
 import { resolve } from "path";
-import { defineConfig, externalizeDepsPlugin } from "electron-vite";
+import { defineConfig } from "electron-vite";
 import react from "@vitejs/plugin-react";
 import { copyFileSync } from "node:fs";
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin({ exclude: ["@flowsense/shared"] })],
     build: {
+      externalizeDeps: { exclude: ["@flowsense/shared"] },
       lib: {
         entry: "electron/main.ts",
         formats: ["es"],
@@ -21,8 +21,8 @@ export default defineConfig({
     },
   },
   preload: {
-    plugins: [externalizeDepsPlugin({ exclude: ["@flowsense/shared"] })],
     build: {
+      externalizeDeps: { exclude: ["@flowsense/shared"] },
       lib: {
         entry: "electron/preload.ts",
         formats: ["es"],

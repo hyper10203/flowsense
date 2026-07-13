@@ -1,6 +1,6 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useApp } from "./store.jsx";
-import { useActiveFlow, useStopFlow } from "./hooks/use-api.js";
+import { useActiveFlow, useActivityStream, useStopFlow } from "./hooks/use-api.js";
 import { AppShell } from "./components/layout/AppShell.jsx";
 import { ToastViewport } from "./components/ui/Toast.jsx";
 import { FlowOverlay } from "./components/flow/FlowOverlay.jsx";
@@ -12,6 +12,7 @@ import { WorkflowsPage } from "./pages/Workflows.jsx";
 import { AnalyticsPage } from "./pages/Analytics.jsx";
 import { SearchPage } from "./pages/Search.jsx";
 import { SettingsPage } from "./pages/Settings.jsx";
+import type { ActivityEvent } from "@flowsense/shared";
 
 function ActivePage(): JSX.Element {
   const { route } = useApp();
@@ -33,22 +34,16 @@ function ActivePage(): JSX.Element {
   }
 }
 
-function FlowModeLayer(): JSX.Element | null {
+function FlowModeLayer({ events }: { events: ActivityEvent[] }): JSX.Element | null {
   const { activeFlow, setActiveFlow } = useApp();
-  const stopFlow = useStopFlow();
 
   if (!activeFlow || !activeFlow.workflow) return null;
 
   return (
     <FlowOverlay
       session={activeFlow}
-      onClose={() => {
-        stopFlow.mutate({
-          sessionId: activeFlow.id,
-          stepsCompleted: activeFlow.steps_completed,
-        });
-        setActiveFlow(null);
-      }}
+      events={events}
+      onClose={() => setActiveFlow(null)}
       onStepUpdate={(steps) => setActiveFlow({ ...activeFlow, steps_completed: steps })}
     />
   );
@@ -57,9 +52,23 @@ function FlowModeLayer(): JSX.Element | null {
 export function App(): JSX.Element {
   const { setRoute, setActiveFlow, activeFlow } = useApp();
   const stopFlow = useStopFlow();
+  const activityEvents = useActivityStream();
+  const { data: backendActiveFlow, refetch: refetchActiveFlow } = useActiveFlow();
   const [showSetup, setShowSetup] = useState(
     () => localStorage.getItem("flowsense:setupSeen") !== "1"
   );
+
+  // Keep the UI in sync with sessions started by global shortcuts or another
+  // renderer, rather than only sessions started from the Workflows page.
+  useEffect(() => {
+    setActiveFlow(backendActiveFlow ?? null);
+  }, [backendActiveFlow, setActiveFlow]);
+
+  useEffect(() => {
+    return window.flowSense.system.onFlowShortcutTriggered(() => {
+      void refetchActiveFlow();
+    });
+  }, [refetchActiveFlow]);
 
   const handleToggleFlow = useCallback(() => {
     if (activeFlow) {
@@ -80,7 +89,7 @@ export function App(): JSX.Element {
           <ActivePage />
         </ErrorBoundary>
       </AppShell>
-      <FlowModeLayer />
+      <FlowModeLayer events={activityEvents} />
       <ToastViewport />
       <SetupWizard
         open={showSetup}

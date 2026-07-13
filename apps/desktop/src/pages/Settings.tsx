@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Download, Eye, EyeOff, Key, Trash2 } from "lucide-react";
-import { useDeleteActivity, useExportData, useSettings, useUpdateSetting } from "../hooks/use-api.js";
+import { useAiModels, useDeleteActivity, useExportData, useSettings, useUpdateSetting } from "../hooks/use-api.js";
 import { useApp } from "../store.jsx";
 import { SettingsSection } from "../components/settings/SettingsSection.jsx";
 import { ToggleRow } from "../components/settings/ToggleRow.jsx";
@@ -18,6 +18,7 @@ export function SettingsPage(): JSX.Element {
   const exportData = useExportData();
   const deleteActivity = useDeleteActivity();
   const { settings, updateSetting: localUpdate, resetSettings } = useApp();
+  const { data: discoveredModels } = useAiModels(settings.ai_provider);
   const [exporting, setExporting] = useState(false);
 
   const handleExport = async (): Promise<void> => {
@@ -117,7 +118,26 @@ export function SettingsPage(): JSX.Element {
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-xs font-medium text-fg">
             <Key size={13} className="text-accent" />
-            AI provider: Gemini (only)
+            AI provider
+          </div>
+          <div className="space-y-1">
+            <label className="block text-[11px] font-medium text-fg-muted">Provider</label>
+            <select
+              value={settings.ai_provider}
+              onChange={(e) => {
+                const provider = e.target.value as typeof settings.ai_provider;
+                const config = AI_PROVIDERS.find((item) => item.id === provider);
+                localUpdate("ai_provider", provider);
+                updateSetting.mutate({ key: "ai_provider", value: provider });
+                if (config) {
+                  localUpdate("ai_model", config.defaultModel);
+                  updateSetting.mutate({ key: "ai_model", value: config.defaultModel });
+                }
+              }}
+              className="w-full px-3 py-1.5 rounded-lg bg-bg-subtle border border-border text-xs text-fg outline-none focus:ring-1 focus:ring-accent/40 focus:border-accent/30 transition-colors"
+            >
+              {AI_PROVIDERS.map((provider) => <option key={provider.id} value={provider.id}>{provider.label}</option>)}
+            </select>
           </div>
           <div className="space-y-1">
             <label className="block text-[11px] font-medium text-fg-muted">
@@ -125,7 +145,7 @@ export function SettingsPage(): JSX.Element {
             </label>
             <ApiKeyInput
               value={settings.ai_api_key}
-              placeholder="AI API key"
+              placeholder={AI_PROVIDERS.find((provider) => provider.id === settings.ai_provider)?.keyPlaceholder ?? "AI API key"}
               onChange={(v) => {
                 localUpdate("ai_api_key", v);
                 updateSetting.mutate({ key: "ai_api_key", value: v as never });
@@ -145,10 +165,12 @@ export function SettingsPage(): JSX.Element {
               }}
               className="w-full px-3 py-1.5 rounded-lg bg-bg-subtle border border-border text-xs text-fg outline-none focus:ring-1 focus:ring-accent/40 focus:border-accent/30 transition-colors"
             >
-              <option value="gemini-2.0-flash">gemini-2.0-flash</option>
-              <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite</option>
-              <option value="gemini-1.5-pro">gemini-1.5-pro</option>
-              <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+              {!discoveredModels?.models.some((model) => model.id === settings.ai_model) && (
+                <option value={settings.ai_model}>{settings.ai_model}</option>
+              )}
+              {(discoveredModels?.models ?? []).map((model) => (
+                <option key={model.id} value={model.id}>{model.name}</option>
+              ))}
             </select>
           </div>
           <div className="flex gap-2">
@@ -174,9 +196,33 @@ export function SettingsPage(): JSX.Element {
             </Button>
           </div>
           <p className="text-[10px] text-fg-subtle leading-relaxed">
-            Set env var <code className="px-1 py-0.5 rounded bg-bg-subtle text-accent/80">AI_API_KEY</code> on the backend, or store the key here. Restart backend to apply.
+            Models are fetched from the selected account when that provider supports discovery. Keys stay on this device.
           </p>
         </div>
+      </SettingsSection>
+
+      <SettingsSection
+        title="Voice & automation"
+        description="Use voice commands for active flows and enable confirmed local automation."
+      >
+        <ToggleRow
+          label="Voice feedback"
+          description="Read flow progress aloud through KittenTTS when installed, otherwise your system voice."
+          checked={settings.voice_feedback}
+          onChange={(v) => {
+            localUpdate("voice_feedback", v);
+            updateSetting.mutate({ key: "voice_feedback", value: v });
+          }}
+        />
+        <ToggleRow
+          label="Automation planning"
+          description="Allow FlowSense to prepare actions; every desktop action still asks for confirmation."
+          checked={settings.automation_enabled}
+          onChange={(v) => {
+            localUpdate("automation_enabled", v);
+            updateSetting.mutate({ key: "automation_enabled", value: v });
+          }}
+        />
       </SettingsSection>
 
       <SettingsSection

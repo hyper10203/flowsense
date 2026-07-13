@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings as app_settings
 from app.core.database import get_db
+from app.core.time import utc_iso
 from app.models.activity import Activity
 from app.services import workflow_service
 from app.services.ai_service import name_workflow
@@ -26,7 +27,7 @@ def run_detection(db: Session = Depends(get_db)):
             "application": e.application,
             "window_title": e.window_title,
             "url": e.url,
-            "timestamp": e.timestamp.isoformat() if hasattr(e.timestamp, "isoformat") else str(e.timestamp),
+            "timestamp": utc_iso(e.timestamp),
         }
         for e in events
     ]
@@ -42,7 +43,7 @@ def run_detection(db: Session = Depends(get_db)):
         if wf.ai_name is None and app_settings.gemini_api_key:
             try:
                 result = asyncio.run(
-                    name_workflow(det.steps, det.frequency, det.confidence)
+                    name_workflow(det.applications, det.frequency, det.confidence)
                 )
                 if result:
                     wf.ai_name = result.get("name")
@@ -53,9 +54,9 @@ def run_detection(db: Session = Depends(get_db)):
 
         # Fallback: generate a name from steps if AI didn't provide one
         if wf.ai_name is None:
-            step_names = " → ".join(det.steps)
+            step_names = " → ".join(det.applications)
             wf.ai_name = step_names if len(step_names) <= 100 else step_names[:97] + "..."
-            wf.description = f"You switch between {', '.join(det.steps)} {det.frequency} times."
+            wf.description = f"You switch between {', '.join(det.applications)} {det.frequency} times."
 
         # Auto-create suggestion for detected workflows
         create_suggestion_for_workflow(db, wf)
